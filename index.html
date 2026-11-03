@@ -1,0 +1,1412 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>my little simge's workshop</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column, like a manuscript leaf; eras colour-coded Aegean / Pompeian / Monastic. */
+:root{
+  --bg:#F1F2F7; --surface:#FFFFFF; --sunk:#E6E8F1; --ink:#1B1F3B; --muted:#596084; --line:#D4D7E5;
+  --lapis:#2B3D8F; --gilt:#94680F; --rose:#B33D64;
+  --era-g:#2D69AC; --era-r:#A23A2A; --era-m:#3A744F;
+  --ok:#21774A; --okbg:#E2F2E8; --bad:#B0352E; --badbg:#F8E5E3;
+  --display:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --label:"Cinzel", "Trajan Pro", Georgia, serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10132A; --surface:#191D39; --sunk:#232849; --ink:#E9EAF4; --muted:#A3A8C9; --line:#323964;
+    --lapis:#9EAEF5; --gilt:#DDB65C; --rose:#F08DAA;
+    --era-g:#7EB3EC; --era-r:#EE927F; --era-m:#8BCB9F;
+    --ok:#6FD39A; --okbg:#163829; --bad:#F28A82; --badbg:#41201F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10132A; --surface:#191D39; --sunk:#232849; --ink:#E9EAF4; --muted:#A3A8C9; --line:#323964;
+  --lapis:#9EAEF5; --gilt:#DDB65C; --rose:#F08DAA;
+  --era-g:#7EB3EC; --era-r:#EE927F; --era-m:#8BCB9F;
+  --ok:#6FD39A; --okbg:#163829; --bad:#F28A82; --badbg:#41201F;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1rem;line-height:1.55;-webkit-font-smoothing:antialiased}
+
+/* app shell: subjects sidebar on the left, work area on the right */
+.shell{display:grid;grid-template-columns:15.5rem minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column;gap:4px;background:var(--surface);border-right:1px solid var(--line);padding-block:20px 16px;padding-left:max(14px, env(safe-area-inset-left, 0px));padding-right:14px}
+.side .brand{margin:0 6px 18px}
+.nv{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;background:none;border:0;border-radius:9px;padding:8px 10px;color:var(--muted);font-size:.95rem}
+.nv:hover{background:var(--sunk);color:var(--ink)}
+.nv[aria-current="page"]{background:color-mix(in srgb, var(--lapis) 13%, var(--surface));color:var(--ink);font-weight:600}
+.nv small{font-size:.75rem;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.nv.subj{font-family:var(--display);font-size:1.2rem;font-weight:600;color:var(--ink)}
+.nv-lbl{font-family:var(--label);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:16px 10px 4px}
+.subnav{display:grid;gap:2px;margin:2px 0 4px 12px;padding-left:8px;border-left:1px solid var(--line)}
+.subnav .nv{padding:6px 10px;font-size:.9rem}
+.soon{margin:10px 10px 0;font-size:.8rem;color:var(--muted);line-height:1.4}
+.side-foot{margin-top:auto;display:grid;gap:8px;padding-top:14px;border-top:1px solid var(--line)}
+.side-foot .sync{padding:0 10px}
+.main{min-width:0;padding-block:22px 56px;padding-left:clamp(16px, 4vw, 44px);padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.main > section{max-width:800px}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:.86rem;color:var(--muted);margin-bottom:18px;min-height:1.4em}
+.crumbs button{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.crumbs button:hover{color:var(--ink)}
+.crumbs span[aria-current]{color:var(--ink)}
+@media (max-width:820px){
+  .shell{display:block}
+  .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;border-right:0;border-bottom:1px solid var(--line);padding-block:12px;padding-right:max(16px, env(safe-area-inset-right, 0px))}
+  .side .brand{margin:0 auto 4px 4px;flex-basis:100%}
+  .nv{width:auto;padding:6px 12px;border:1px solid var(--line);border-radius:999px}
+  .nv.subj{font-family:var(--body);font-size:.95rem}
+  .nv-lbl,.soon,.nv small{display:none}
+  .subjnav{display:flex;flex-wrap:wrap;gap:6px}
+  .subnav{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;border:0;flex-basis:100%}
+  .side-foot{margin:0;padding:0;border:0;display:flex;align-items:center;gap:8px}
+  .main{padding-left:max(16px, env(safe-area-inset-left, 0px))}
+}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--lapis);outline-offset:2px;border-radius:6px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.lbl{font-family:var(--label);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* brand */
+.brand{display:flex;align-items:baseline;gap:10px;background:none;border:0;padding:0;text-align:left}
+.brand .mark{font-family:var(--display);font-style:italic;font-weight:600;font-size:2.1rem;line-height:1;color:var(--gilt)}
+.brand .name{font-family:var(--display);font-size:1.45rem;font-weight:600;line-height:1.1}
+.brand .name i{color:var(--rose);font-weight:600}
+.sync{font-size:.78rem;color:var(--muted);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.sync[data-s="cloud"]::before{background:var(--ok)}
+.sync[data-s="saving"]::before{background:var(--gilt)}
+
+/* home */
+.hello{margin-bottom:22px}
+.hello h1{font-family:var(--display);font-weight:500;font-size:clamp(2rem,6vw,2.8rem);line-height:1.08}
+.hello h1 em{color:var(--lapis)}
+.hello p{margin:8px 0 0;color:var(--muted);max-width:60ch}
+.resume{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;border-radius:12px;background:color-mix(in srgb, var(--lapis) 9%, var(--surface));border:1px solid color-mix(in srgb, var(--lapis) 30%, var(--line))}
+.resume span{flex:1;min-width:0}
+.banners{display:grid;gap:8px;margin-bottom:16px}
+.banners .resume{margin:0}
+.subjnav{display:grid;gap:2px}
+.cats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:560px){.cats{grid-template-columns:1fr}}
+.cat{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;transition:border-color .15s, transform .15s}
+.cat:hover{border-color:var(--lapis);transform:translateY(-1px)}
+.cat .t{font-family:var(--display);font-size:1.7rem;font-weight:600;line-height:1.1}
+.cat .d{color:var(--muted);font-size:.93rem}
+.cat .n{margin-top:6px;font-size:.82rem;color:var(--gilt);font-weight:600;font-variant-numeric:tabular-nums}
+.cat.main{border-color:color-mix(in srgb, var(--lapis) 45%, var(--line))}
+.cats.three{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:14px}
+@media (max-width:720px){.cats.three{grid-template-columns:1fr}}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;padding-top:16px;border-top:1px dashed var(--line);color:var(--muted);font-size:.9rem}
+.stats b{color:var(--ink);font-variant-numeric:tabular-nums}
+.eras{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:.85rem;color:var(--muted)}
+.eras span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:var(--c)}
+
+/* filter chips */
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 11px 5px 9px;font-size:.82rem;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c);opacity:.35}
+.chip[aria-pressed="true"]{color:var(--ink);border-color:var(--c);background:color-mix(in srgb, var(--c) 10%, var(--surface))}
+.chip[aria-pressed="true"]::before{opacity:1}
+.count{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.spacer{flex:1}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 16px;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--lapis);border-color:var(--lapis);color:var(--bg)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.sm{padding:6px 12px;font-size:.88rem}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb, var(--bad) 45%, var(--line))}
+.btn.danger.solid{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* learn card */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 22px 18px;position:relative;overflow:hidden}
+.card::after{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--c)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:10px}
+.era{font-family:var(--label);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--c);font-weight:600}
+.date{font-size:.8rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-variant-numeric:tabular-nums}
+.term{font-family:var(--display);font-weight:600;font-size:clamp(2.1rem,7vw,3rem);line-height:1.02;letter-spacing:-.005em}
+.trn{font-family:var(--display);font-style:italic;font-size:1.35rem;color:var(--muted);margin-top:4px}
+.sect{margin-top:18px;display:grid;gap:14px}
+.blk h3{font-family:var(--label);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+.blk p{margin:0;max-width:65ch}
+.blk.k p{font-size:1.08rem}
+.hook{background:color-mix(in srgb, var(--gilt) 11%, var(--surface));border-radius:10px;padding:12px 14px}
+.hook h3{color:var(--gilt)}
+.ex p{font-family:var(--display);font-size:1.15rem;font-style:italic;line-height:1.4}
+details.def{border-top:1px solid var(--line);padding-top:10px}
+details.def summary{cursor:pointer;color:var(--muted);font-size:.88rem}
+details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
+.veil{display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-top:18px;padding:16px;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
+.nav{display:flex;align-items:center;gap:10px;margin-top:14px}
+.nav .pos{flex:1;text-align:center;color:var(--muted);font-size:.9rem;font-variant-numeric:tabular-nums}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:.9rem;color:var(--muted);cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--lapis);width:16px;height:16px}
+.kbd{font-size:.78rem;color:var(--muted);margin-top:10px;text-align:center}
+
+/* quiz */
+.setup{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:18px}
+.setup .row{display:grid;gap:8px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 14px;font-size:.9rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.seg button[aria-pressed="true"]{border-color:var(--lapis);color:var(--ink);background:color-mix(in srgb, var(--lapis) 10%, var(--surface))}
+.prog{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.track{flex:1;height:6px;background:var(--sunk);border-radius:999px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--lapis);border-radius:999px;transition:width .3s}
+.prog .num{font-size:.88rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.ask{font-family:var(--label);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:10px}
+.passage{font-family:var(--display);font-size:1.32rem;line-height:1.42;margin:0 0 18px;padding:2px 0 2px 16px;border-left:2px solid var(--c)}
+.passage.def{font-family:var(--body);font-size:1.05rem;line-height:1.55}
+.opts{display:grid;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;transition:border-color .12s, background .12s}
+.opt:hover:not(:disabled){border-color:var(--lapis)}
+.opt:disabled{cursor:default}
+.opt .L{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:var(--label);font-size:.8rem;font-weight:600;border:1px solid var(--line);color:var(--muted)}
+.opt .o{display:flex;flex-direction:column;min-width:0}
+.opt .o b{font-weight:600}
+.opt .o small{color:var(--muted)}
+.opt.right{border-color:var(--ok);background:var(--okbg)}
+.opt.right .L{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.opt.wrong{border-color:var(--bad);background:var(--badbg)}
+.opt.wrong .L{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.opt.dim{opacity:.55}
+.fb{margin-top:16px;border-radius:14px;padding:16px 18px;display:grid;gap:10px}
+.fb.ok{background:var(--okbg)}
+.fb.no{background:var(--badbg)}
+.fb .head{font-weight:600;font-size:1.05rem}
+.fb.ok .head{color:var(--ok)}
+.fb.no .head{color:var(--bad)}
+.fb p{margin:0;max-width:65ch}
+.fb .tip{font-size:.95rem}
+.fb .tip b{color:var(--gilt)}
+.fb .mine{font-size:.92rem;color:var(--muted);border-top:1px solid color-mix(in srgb, var(--bad) 25%, transparent);padding-top:10px}
+.fb .mine b{color:var(--ink)}
+.after{display:flex;justify-content:flex-end;margin-top:14px}
+
+/* fill in the blank */
+.gap{display:inline-block;min-width:5.5em;border-bottom:2px solid var(--c);margin:0 .12em;line-height:1.05;text-align:center;font-style:normal}
+.gap.filled{color:var(--ok);font-weight:600;padding:0 .2em}
+.answer{display:flex;flex-wrap:wrap;gap:8px}
+.answer input{flex:1 1 14rem;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 14px;font:inherit;font-size:1.05rem}
+.answer input:focus{outline:2px solid var(--lapis);outline-offset:0}
+.answer input:disabled{opacity:.7}
+.hintrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:10px}
+.hints{display:grid;gap:4px;margin-top:10px;font-size:.95rem;color:var(--muted)}
+.hints b{color:var(--gilt);font-weight:600}
+.hints .pat{font-family:ui-monospace, "Cascadia Mono", Consolas, monospace;letter-spacing:.06em;color:var(--gilt)}
+.linkbtn{background:none;border:0;padding:4px 0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:.92rem}
+.linkbtn:hover{color:var(--ink)}
+.linkbtn:disabled{opacity:.45;cursor:default;text-decoration:none}
+
+/* result */
+.score{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.score .big{font-family:var(--display);font-size:4rem;line-height:1;font-weight:600;font-variant-numeric:lining-nums tabular-nums}
+.score .pct{font-size:1.1rem;color:var(--muted)}
+.msg{font-family:var(--display);font-style:italic;font-size:1.3rem;margin:0 0 18px}
+.list{display:grid;gap:8px;margin:12px 0 20px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;border-left:3px solid var(--c)}
+.item b{font-weight:600}
+.item .tr{color:var(--muted);font-style:italic;font-family:var(--display);font-size:1.05rem}
+.item p{margin:4px 0 0;font-size:.93rem;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:22px;color:var(--muted)}
+.empty h2{font-family:var(--display);font-size:1.6rem;color:var(--ink);margin-bottom:6px}
+
+/* glossary */
+.search{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;font:inherit;color:var(--ink)}
+.search:focus{outline:2px solid var(--lapis);outline-offset:0}
+.gl{display:grid;gap:6px;margin-top:12px}
+.gl details{background:var(--surface);border:1px solid var(--line);border-radius:10px;border-left:3px solid var(--c)}
+.gl summary{cursor:pointer;padding:10px 14px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;list-style:none}
+.gl summary::-webkit-details-marker{display:none}
+.gl summary b{font-family:var(--display);font-size:1.2rem;font-weight:600}
+.gl summary span{color:var(--muted);font-size:.9rem}
+.gl .body{padding:0 14px 14px;display:grid;gap:8px;font-size:.95rem}
+.gl .body p{margin:0;max-width:65ch}
+.gl .body .h{color:var(--gilt)}
+.vt{font-family:var(--display);font-size:2rem;font-weight:600;margin-bottom:4px}
+.vd{color:var(--muted);margin:0 0 16px;max-width:62ch}
+
+/* settings */
+.sets{display:grid;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:grid;gap:14px}
+.panel h3{font-family:var(--display);font-size:1.45rem;font-weight:600}
+.panel p{margin:0;color:var(--muted);max-width:62ch;font-size:.95rem}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--sunk);border-radius:10px;padding:10px 12px}
+.tile b{display:block;font-family:var(--display);font-size:1.9rem;line-height:1.1;font-weight:600;font-variant-numeric:lining-nums tabular-nums}
+.tile span{font-size:.8rem;color:var(--muted)}
+.meter{display:grid;grid-template-columns:minmax(0,9.5rem) minmax(0,1fr) 3.4rem;align-items:center;gap:10px;font-size:.88rem}
+.meter .bar2{height:8px;background:var(--sunk);border-radius:999px;overflow:hidden}
+.meter .bar2 i{display:block;height:100%;background:var(--c);border-radius:999px}
+.meter .v{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.meter .nm{color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist{display:grid;gap:4px;font-size:.9rem;font-variant-numeric:tabular-nums}
+.hist div{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}
+.hist div:last-child{border-bottom:0}
+.hist span{color:var(--muted)}
+.opt-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
+.opt-row .lab{min-width:0}
+.opt-row .lab b{display:block;font-weight:600;font-size:.95rem}
+.opt-row .lab small{color:var(--muted)}
+.danger-zone{border-color:color-mix(in srgb, var(--bad) 40%, var(--line))}
+.confirm{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:var(--badbg);font-size:.92rem}
+.confirm span{flex:1;min-width:12rem}
+.done{color:var(--ok);font-size:.9rem;font-weight:500}
+
+/* home: subject cards */
+.subjects{display:grid;gap:12px;margin:10px 0 6px}
+.subj-card{display:grid;gap:8px;text-align:left;background:var(--surface);border:1px solid color-mix(in srgb, var(--lapis) 40%, var(--line));border-radius:16px;padding:20px}
+.subj-card:hover{border-color:var(--lapis)}
+.subj-card .t{font-family:var(--display);font-size:1.9rem;font-weight:600;line-height:1.1}
+.subj-card .d{color:var(--muted);font-size:.95rem}
+.subj-card .row2{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.88rem;color:var(--muted)}
+.subj-card .row2 b{color:var(--ink);font-variant-numeric:tabular-nums}
+.subj-card .go{color:var(--lapis);font-weight:600;font-size:.92rem}
+.meterline{height:6px;background:var(--sunk);border-radius:999px;overflow:hidden}
+.meterline i{display:block;height:100%;background:var(--lapis);border-radius:999px}
+
+/* settings: appearance */
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(7.4rem,1fr));gap:10px}
+.sw{display:grid;gap:6px;background:none;border:2px solid transparent;border-radius:12px;padding:4px;text-align:left}
+.sw[aria-pressed="true"]{border-color:var(--lapis)}
+.sw-prev{position:relative;display:block;height:4.2rem;border-radius:9px;border:1px solid;overflow:hidden}
+.sw-card{position:absolute;left:10px;right:10px;bottom:10px;top:14px;border-radius:6px;display:flex;align-items:center;padding:0 8px;font-family:var(--display);font-size:1.15rem;font-weight:600}
+.sw-dot{position:absolute;right:16px;top:50%;width:12px;height:12px;border-radius:50%;margin-top:-2px}
+.sw-name{font-size:.84rem;color:var(--ink);padding:0 4px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.fontseg button{font-size:1rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="shell">
+  <aside class="side">
+    <button class="brand" data-go="home" aria-label="Ana sayfa">
+      <span class="mark">S</span>
+      <span class="name">my little <i>simge's</i> workshop</span>
+    </button>
+    <button class="nv" data-go="home">Ana sayfa</button>
+    <div class="nv-lbl">Dersler</div>
+    <div id="subjnav" class="subjnav"></div>
+    <p class="soon">Yeni dersler eklendikçe burada görünecek.</p>
+    <div class="side-foot">
+      <button class="nv" data-go="settings">Ayarlar</button>
+      <span class="sync" id="sync" data-s="local">Bu cihaza kaydediliyor</span>
+    </div>
+  </aside>
+
+  <main class="main">
+  <nav class="crumbs" id="crumbs" aria-label="Konum"></nav>
+
+  <!-- HOME -->
+  <section id="v-home">
+    <div class="hello">
+      <div class="lbl">Hoş geldin</div>
+      <h1>Bugün ne <em>çalışalım</em>?</h1>
+      <p>Soldan bir ders seç. Yaptığın her şey otomatik kaydedilir.</p>
+    </div>
+    <div class="banners" id="h-banners" hidden></div>
+    <div class="lbl">Derslerin</div>
+    <div class="subjects" id="h-subjects"></div>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <!-- SUBJECT (ders): filled in for the chosen subject -->
+  <section id="v-subject" hidden>
+    <div class="hello">
+      <div class="lbl">Ders</div>
+      <h1 id="s-title"></h1>
+      <p id="s-intro"></p>
+    </div>
+    <div class="banners" id="s-banners" hidden></div>
+    <div class="cats three">
+      <button class="cat main" data-go="learn">
+        <span class="lbl">Öğren</span>
+        <span class="t">Anlatım</span>
+        <span class="d">Kavramlar karışık sırayla gelir: kısa açıklama, akılda kalıcı bir ipucu ve örnek.</span>
+        <span class="n" id="n-learn"></span>
+      </button>
+      <button class="cat main" data-go="quiz">
+        <span class="lbl">Sına</span>
+        <span class="t">Test</span>
+        <span class="d">Bir metin okursun, hangi kavram olduğunu işaretlersin. Yanlışsa doğrusunu ve nedenini görürsün.</span>
+        <span class="n" id="n-quiz"></span>
+      </button>
+      <button class="cat main" data-go="fill">
+        <span class="lbl">Uygula</span>
+        <span class="t">Boşluk Doldurma</span>
+        <span class="d">Notlarındaki cümlelerde kavramın yeri boş. Doğru kavramı yazarak ya da seçerek tamamla.</span>
+        <span class="n" id="n-fill"></span>
+      </button>
+    </div>
+    <div class="cats">
+      <button class="cat" data-go="wrong">
+        <span class="lbl">Tekrar</span>
+        <span class="t">Yanlışlarım</span>
+        <span class="d">Testte karıştırdığın kavramlar burada birikir. Doğru bilince listeden çıkar.</span>
+        <span class="n" id="n-wrong"></span>
+      </button>
+      <button class="cat" data-go="gloss">
+        <span class="lbl">Başvuru</span>
+        <span class="t">Sözlük</span>
+        <span class="d">Bütün kavramlar tek listede. Kavram adına ya da açıklamasına göre ara.</span>
+        <span class="n" id="n-gloss"></span>
+      </button>
+    </div>
+    <div class="eras" id="s-eras"></div>
+  </section>
+
+  <!-- LEARN -->
+  <section id="v-learn" hidden>
+    <div class="bar">
+      <div class="chips" data-chips></div>
+    </div>
+    <div class="bar">
+      <span class="count" id="l-count"></span>
+      <span class="spacer"></span>
+      <label class="toggle"><input type="checkbox" id="l-guess"> Önce tahmin et</label>
+      <button class="btn sm" id="l-shuffle">Karıştır</button>
+    </div>
+    <article class="card" id="l-card"></article>
+    <div class="nav">
+      <button class="btn" id="l-prev">← Önceki</button>
+      <span class="pos" id="l-pos"></span>
+      <button class="btn pri" id="l-next">Sonraki →</button>
+    </div>
+    <div class="kbd">Klavye: ← → ile gez, boşluk ile göster. Telefonda kartı sağa-sola kaydır.</div>
+  </section>
+
+  <!-- QUIZ SETUP -->
+  <section id="v-quiz" hidden>
+    <h2 class="vt">Test</h2>
+    <p class="vd">Her soruda bir metin ya da tanım gelir. Hangi kavram olduğunu seç. Yanlış seçersen doğrusu ve farkı açıklanır.</p>
+    <div class="banners" id="q-banners" hidden></div>
+    <div class="setup">
+      <div class="row">
+        <span class="lbl">Bölümler</span>
+        <div class="chips" data-chips></div>
+        <span class="count" id="q-pool"></span>
+      </div>
+      <div class="row">
+        <span class="lbl">Soru sayısı</span>
+        <div class="seg" id="q-n"></div>
+      </div>
+      <div class="row">
+        <span class="lbl">Soru tipi</span>
+        <div class="seg" id="q-types">
+          <button data-t="text">Metin → kavram</button>
+          <button data-t="def">Tanım → kavram</button>
+        </div>
+      </div>
+      <div><button class="btn pri" id="q-start">Teste başla</button></div>
+    </div>
+  </section>
+
+  <!-- QUIZ RUN -->
+  <section id="v-run" hidden>
+    <div class="prog">
+      <div class="track"><i id="r-bar"></i></div>
+      <span class="num" id="r-num"></span>
+    </div>
+    <article class="card" id="r-card"></article>
+    <div class="after" id="r-after" hidden><button class="btn pri" id="r-next">Sonraki soru →</button></div>
+  </section>
+
+  <!-- FILL SETUP -->
+  <section id="v-fill" hidden>
+    <h2 class="vt">Boşluk Doldurma</h2>
+    <p class="vd">Bir cümle gelir, kavramın yeri boş bırakılmıştır. Doğru kavramı yaz ya da seç. Takılırsan ipucu al: önce kısa bir açıklama, sonra harfleri gösterilir.</p>
+    <div class="banners" id="f-banners" hidden></div>
+    <div class="setup">
+      <div class="row">
+        <span class="lbl">Bölümler</span>
+        <div class="chips" data-chips></div>
+        <span class="count" id="f-pool"></span>
+      </div>
+      <div class="row">
+        <span class="lbl">Soru sayısı</span>
+        <div class="seg" id="f-n"></div>
+      </div>
+      <div class="row">
+        <span class="lbl">Cevaplama şekli</span>
+        <div class="seg" id="f-mode">
+          <button data-m="type">Yazarak</button>
+          <button data-m="pick">Seçerek</button>
+        </div>
+      </div>
+      <div><button class="btn pri" id="f-start">Başla</button></div>
+    </div>
+  </section>
+
+  <!-- FILL RUN -->
+  <section id="v-frun" hidden>
+    <div class="prog">
+      <div class="track"><i id="f-bar"></i></div>
+      <span class="num" id="f-num"></span>
+    </div>
+    <article class="card" id="f-card"></article>
+    <div class="after" id="f-after" hidden><button class="btn pri" id="f-next">Sonraki →</button></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="v-result" hidden></section>
+
+  <!-- WRONG -->
+  <section id="v-wrong" hidden></section>
+
+  <!-- GLOSSARY -->
+  <section id="v-gloss" hidden>
+    <h2 class="vt">Sözlük</h2>
+    <div class="bar"><div class="chips" data-chips></div></div>
+    <input class="search" id="g-q" type="search" placeholder="Ara: hubris, kibir, Chaucer…" autocomplete="off">
+    <div class="count" id="g-count" style="margin-top:8px"></div>
+    <div class="gl" id="g-list"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="v-settings" hidden></section>
+  </main>
+</div>
+
+<script src="base.js"></script>
+<script src="notes-greek.js"></script>
+<script src="notes-roman.js"></script>
+<script src="notes-medieval.js"></script>
+<script src="edu.js"></script>
+<script>
+(function(){
+const trLower = s => s.toLocaleLowerCase("tr");
+
+// ---------- subjects (dersler) ----------
+// Every view works on the current subject: C (concepts), SECS (sections), NOPE (overlapping pairs) and S (its saved progress).
+const SUBJECTS = {};
+function addSubject(def){
+  def.ids = Object.keys(def.secs);
+  def.NOPE = def.C.map(() => new Set());
+  def.overlap.forEach(g => g.forEach(a => g.forEach(b => { if (a !== b) def.NOPE[a].add(b); })));
+  SUBJECTS[def.id] = def;
+}
+const TR_FIX = {225:"Kenning (mecazlı birleşik ad)"};
+
+// Pairs that overlap too much to be offered against each other as answer and distractor.
+const OVERLAP_EN = [[63,67],[13,14],[18,43],[5,35],[3,47,48],[10,36,192],[12,122,166],[6,121],[88,91,135],[89,95],[16,93],
+  [52,83,84,82,85],[92,129],[86,131,130,126],[126,228,229],[229,249],[132,133,236],[236,237,238,218,206],[127,231],
+  [138,139],[138,140],[138,141],[115,116],[24,118],[159,197],[160,171],[196,233],[199,196],[199,233],[212,213,214,234,220],
+  [186,240],[217,240],[207,210],[206,211],[87,205,230,242],[241,242],[87,245],[205,245],[206,245],[244,245],[72,244],
+  [144,247,248],[179,180],[157,173,174],[189,190],[158,203],[226,227],[162,163,166],[166,193],[39,40],[39,41],[32,58],
+  [20,21],[154,153],[181,185],[243,236],[243,206]];
+
+addSubject({
+  id:"en", name:"İngilizce Kavramlar", lang:"en",
+  intro:"Yunan, Roma ve Orta Çağ edebiyatından 250 kavram. Önce kısa anlatımla öğren, sonra metinlerle ve boşluk doldurmayla kendini sına.",
+  card:"Yunan, Roma ve Orta Çağ edebiyatından 250 kavram",
+  defLabel:"Notlardaki İngilizce tanım", search:"Ara: hubris, kibir, Chaucer…",
+  eraNames:{g:"Yunan", r:"Roma", m:"Orta Çağ"},
+  secs:{
+    g1:{era:"g", short:"Yunan · Bağlam",   long:"Yunan Edebiyatı · Bağlamsal Kavramlar"},
+    g2:{era:"g", short:"Yunan · Terim",    long:"Yunan Edebiyatı · Edebi Terimler"},
+    r1:{era:"r", short:"Roma · Bağlam",    long:"Roma Edebiyatı · Bağlamsal Kavramlar"},
+    r2:{era:"r", short:"Roma · Terim",     long:"Roma Edebiyatı · Edebi Terimler"},
+    m1:{era:"m", short:"Orta Çağ · Bağlam",long:"Orta Çağ Edebiyatı · Bağlamsal Kavramlar"},
+    m2:{era:"m", short:"Orta Çağ · Terim", long:"Orta Çağ Edebiyatı · Edebi Terimler"}
+  },
+  C: window.BASE.map(b => {
+    const n = window.NOTES[b.id] || [];
+    return Object.assign({}, b, {tr: TR_FIX[b.id] || b.tr, k:n[0]||"", h:n[1]||"", q:n[2]||"", key:b.en.toLowerCase().trim()});
+  }),
+  overlap: OVERLAP_EN
+});
+
+(function(){
+  const C = window.EDU.map((e, i) => ({id:i, s:e.s, en:e.t, tr:"", date:e.date || "", def:e.d, ex:e.x || "", k:e.k, h:e.h, q:e.q,
+    cz:e.c, cs:e.cs || e.t, alt:e.a || [], key:trLower(e.t)}));
+  const byName = {};
+  C.forEach(c => { byName[trLower(c.en)] = c.id; });
+  addSubject({
+    id:"eg", name:"Eğitime Giriş", lang:"tr",
+    intro:"Haftalık ders notlarından " + C.length + " kavram: temel kavramlar, eğitimin işlevleri ve amaçları, tarihi, felsefi ve psikolojik temelleri.",
+    card:"1-7. hafta ders notlarından " + C.length + " kavram",
+    defLabel:"Notlardaki tanım", search:"Ara: örgün eğitim, Piaget, Enderun…",
+    eraNames:{g:"1-3. Hafta · Temel kavramlar", r:"4-5. Hafta · Tarihi temeller", m:"6-7. Hafta · Felsefe ve psikoloji"},
+    secs:{
+      h1:{era:"g", short:"1. Hafta", long:"1. Hafta · Eğitimle İlgili Temel Kavramlar"},
+      h2:{era:"g", short:"2. Hafta", long:"2. Hafta · Eğitim Türleri, Öğrenme ve Program"},
+      h3:{era:"g", short:"3. Hafta", long:"3. Hafta · Eğitimin İşlevleri ve Amaçları"},
+      h4:{era:"r", short:"4-5. Hafta", long:"4-5. Hafta · Eğitimin Tarihi Temelleri"},
+      h6:{era:"m", short:"6. Hafta", long:"6. Hafta · Eğitimin Felsefi Temelleri"},
+      h7:{era:"m", short:"7. Hafta", long:"7. Hafta · Eğitimin Psikolojik Temelleri"}
+    },
+    C: C,
+    overlap: window.EDU_OVERLAP.map(g => g.map(n => byName[trLower(n)]).filter(x => x !== undefined))
+  });
+})();
+const SUBJECT_IDS = Object.keys(SUBJECTS);
+let SUB, C, SECS, SEC_IDS, NOPE;
+const eraColorOf = (sub, s) => "var(--era-" + sub.secs[s].era + ")";
+const eraColor = s => eraColorOf(SUB, s);
+
+// ---------- saved state: everything the viewer does ----------
+// Saved instantly in this browser, and to the viewer's own private space on their account when available.
+// R holds every subject's progress; S is the current subject's part of it.
+const KEY = "simge-workshop-v1";
+const freshSub = id => ({
+  seen:{}, wrong:{}, cs:{}, answered:0, correct:0, tests:0, history:[],
+  secs:SUBJECTS[id].ids.slice(), n:10, types:{text:true, def:true}, guess:false,
+  learn:null, quiz:null, gq:"",
+  fill:null, fa:0, fc:0, fmode:"type", fn:10
+});
+const STATS_KEYS = ["seen","wrong","cs","answered","correct","tests","history","learn","quiz","fill","fa","fc"];
+function normalizeRoot(data){
+  data = JSON.parse(JSON.stringify(data || {}));
+  // Before subjects existed, progress was saved flat: it all belongs to İngilizce Kavramlar.
+  if (!data.subj) data = {updatedAt: data.updatedAt || 0, subj: {en: data}};
+  const root = {updatedAt: data.updatedAt || 0, subj: {}};
+  SUBJECT_IDS.forEach(id => {
+    const s = Object.assign(freshSub(id), data.subj[id] || {});
+    delete s.updatedAt;
+    if (!Array.isArray(s.secs) || !s.secs.length || s.secs.some(x => !SUBJECTS[id].secs[x])) s.secs = SUBJECTS[id].ids.slice();
+    if (!s.types || (!s.types.text && !s.types.def)) s.types = {text:true, def:true};
+    root.subj[id] = s;
+  });
+  return root;
+}
+let R = normalizeRoot({}), S = null;
+try { const saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved) R = normalizeRoot(saved); } catch(e) {}
+function useSubject(id){
+  SUB = SUBJECTS[id]; C = SUB.C; SECS = SUB.secs; SEC_IDS = SUB.ids; NOPE = SUB.NOPE;
+  S = R.subj[id];
+}
+function adopt(data){ R = normalizeRoot(data); S = R.subj[SUB.id]; }
+useSubject("en");
+
+let cloud = null, cloudBusy = false, cloudAgain = false, cloudTimer = null;
+let desktop = false, fileTimer = null, fileChain = Promise.resolve();
+function writeLocal(){ try { localStorage.setItem(KEY, JSON.stringify(R)); } catch(e) {} }
+function save(){
+  R.updatedAt = Date.now();
+  writeLocal();
+  if (cloud) { setSync("saving"); clearTimeout(cloudTimer); cloudTimer = setTimeout(pushCloud, 1200); }
+  if (desktop) { setSync("saving"); clearTimeout(fileTimer); fileTimer = setTimeout(pushFile, 400); }
+}
+// Desktop app (.exe): the launcher exposes load/save to a progress file on the computer.
+function pushFile(){
+  const body = JSON.stringify(R);
+  fileChain = fileChain.then(() => window.pywebview.api.save(body))
+    .then(() => setSync("file"), () => setSync("local"));
+}
+function initDesktop(){
+  if (desktop || !window.pywebview || !window.pywebview.api) return;
+  desktop = true;
+  window.pywebview.api.load().then(txt => {
+    const d = txt ? JSON.parse(txt) : null;
+    if (d && (d.updatedAt || 0) > (R.updatedAt || 0)) { adopt(d); writeLocal(); rerender(); }
+    else if (R.updatedAt) pushFile();
+    setSync("file");
+  }).catch(() => { desktop = false; setSync("local"); });
+}
+async function pushCloud(retried){
+  if (!cloud) return;
+  if (cloudBusy) { cloudAgain = true; return; }
+  cloudBusy = true;
+  try { await cloud.set(JSON.parse(JSON.stringify(R))); setSync("cloud"); }
+  catch(e) {
+    if (e && e.code === "unavailable" && !retried) { cloudBusy = false; setTimeout(() => pushCloud(true), 1500 + Math.random() * 2000); return; }
+    if (e && e.code === "quota_exceeded") setSync("full");
+    else { cloud = null; setSync("local"); }
+  }
+  cloudBusy = false;
+  if (cloudAgain) { cloudAgain = false; pushCloud(); }
+}
+const SYNC_TEXT = {
+  local:"Bu cihaza kaydediliyor",
+  wait:"Hesap bağlantısı bekleniyor",
+  saving:"Kaydediliyor…",
+  cloud:"Hesabına kaydedildi",
+  file:"Bilgisayara kaydedildi",
+  full:"Hesap alanı dolu, bu cihaza kaydediliyor"
+};
+let syncState = "local";
+function setSync(s){ syncState = s; const el = $("#sync"); el.dataset.s = s; el.textContent = SYNC_TEXT[s]; if (current === "settings") renderSettings(); }
+async function initCloud(){
+  if (!window.claude || typeof window.claude.use !== "function") return;
+  setSync("wait");
+  try {
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    const uid = db && user ? await user.id() : null;
+    if (!uid) { setSync("local"); return; }
+    const ref = db.doc("data/users/" + uid + "/progress");
+    let timer;
+    const snap = await Promise.race([ref.get(), new Promise(r => { timer = setTimeout(() => r(null), 10000); })]);
+    clearTimeout(timer);
+    if (!snap) { setSync("local"); return; }
+    cloud = ref;
+    const remote = snap.exists ? snap.data() : null;
+    if (remote && (remote.updatedAt || 0) > (R.updatedAt || 0)) {
+      adopt(remote); writeLocal(); rerender();
+      setSync("cloud");
+    } else if (R.updatedAt && (!remote || R.updatedAt > (remote.updatedAt || 0))) { await pushCloud(); }
+    else setSync("cloud");
+  } catch(e) { cloud = null; setSync("local"); }
+}
+
+// ---------- appearance: kept only on this device (never synced to the account or other computers) ----------
+const LOOK_KEY = "simge-look-v1";
+const LIGHT = {gilt:"#94680F", rose:"#B33D64", eg:"#2D69AC", er:"#A23A2A", em:"#3A744F", ok:"#21774A", okbg:"#E2F2E8", bad:"#B0352E", badbg:"#F8E5E3"};
+const DARK  = {gilt:"#DDB65C", rose:"#F08DAA", eg:"#7EB3EC", er:"#EE927F", em:"#8BCB9F", ok:"#6FD39A", okbg:"#163829", bad:"#F28A82", badbg:"#41201F"};
+const PALETTES = {
+  sabah:    {name:"Sabah",       dark:false, bg:"#F1F2F7", surface:"#FFFFFF", sunk:"#E6E8F1", ink:"#1B1F3B", muted:"#596084", line:"#D4D7E5", accent:"lapis"},
+  gokyuzu:  {name:"Gökyüzü",     dark:false, bg:"#EAF3FA", surface:"#FFFFFF", sunk:"#D8E7F3", ink:"#132637", muted:"#4F687E", line:"#C8DBEA", accent:"lapis"},
+  gul:      {name:"Gül Kurusu",  dark:false, bg:"#F8EEF1", surface:"#FFFFFF", sunk:"#EFDDE4", ink:"#2E1A23", muted:"#7A5866", line:"#E6CFD8", accent:"gul"},
+  lavanta:  {name:"Lavanta",     dark:false, bg:"#F0EDF8", surface:"#FFFFFF", sunk:"#E2DCF1", ink:"#231D3A", muted:"#645B84", line:"#D7D0E9", accent:"mor"},
+  adacayi:  {name:"Adaçayı",     dark:false, bg:"#EDF2EC", surface:"#FBFDFA", sunk:"#DEE7DC", ink:"#1C2A20", muted:"#58695C", line:"#CEDBCC", accent:"zumrut"},
+  gece:     {name:"Gece Mavisi", dark:true,  bg:"#10132A", surface:"#191D39", sunk:"#232849", ink:"#E9EAF4", muted:"#A3A8C9", line:"#323964", accent:"lapis"},
+  bordo:    {name:"Bordo",       dark:true,  bg:"#1E1016", surface:"#2A1720", sunk:"#36202B", ink:"#F3E6EB", muted:"#C6A8B4", line:"#4A2C39", accent:"gul"},
+  orman:    {name:"Orman",       dark:true,  bg:"#0F1A16", surface:"#16251F", sunk:"#1F3229", ink:"#E6F0EA", muted:"#9DB6A8", line:"#2B4237", accent:"zumrut"},
+  murekkep: {name:"Mürekkep",    dark:true,  bg:"#121214", surface:"#1C1C20", sunk:"#26262C", ink:"#ECECF0", muted:"#A3A3AF", line:"#35353D", accent:"altin"}
+};
+const ACCENTS = {
+  lapis:  {name:"Lacivert", light:"#2B3D8F", dark:"#9EAEF5"},
+  gul:    {name:"Gül",      light:"#B03A62", dark:"#F08DAA"},
+  altin:  {name:"Altın",    light:"#8A5F0C", dark:"#E2BC63"},
+  zumrut: {name:"Zümrüt",   light:"#1F7356", dark:"#6FD3A8"},
+  mor:    {name:"Mor",      light:"#6A3FA0", dark:"#C3A4F2"}
+};
+const FONTS_D = [["Cormorant Garamond","Klasik"],["Playfair Display","Zarif"],["Lora","Kitap"],["Nunito","Yuvarlak"],["Caveat","El yazısı"]];
+const FONTS_B = [["Figtree","Modern"],["Nunito","Yumuşak"],["Atkinson Hyperlegible","Okunaklı"],["Lora","Kitap"],["Source Serif 4","Gazete"]];
+const SIZES = [[15,"Küçük"],[16,"Normal"],[18,"Büyük"],[20,"Çok büyük"]];
+const FONT_SPEC = {
+  "Cormorant Garamond":"Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600",
+  "Playfair Display":"Playfair+Display:ital,wght@0,500;0,600;1,500",
+  "Lora":"Lora:ital,wght@0,400;0,500;0,600;1,400;1,500",
+  "Nunito":"Nunito:ital,wght@0,400;0,500;0,600;1,400",
+  "Caveat":"Caveat:wght@500;600",
+  "Figtree":"Figtree:wght@400;500;600",
+  "Atkinson Hyperlegible":"Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400",
+  "Source Serif 4":"Source+Serif+4:ital,wght@0,400;0,600;1,400"
+};
+const SERIF = ["Cormorant Garamond","Playfair Display","Lora","Source Serif 4"];
+const freshLook = () => ({theme:"system", accent:"auto", fontD:"Cormorant Garamond", fontB:"Figtree", size:16});
+let LOOK = freshLook();
+try {
+  const saved = JSON.parse(localStorage.getItem(LOOK_KEY) || "null");
+  if (saved) LOOK = Object.assign(freshLook(), saved);
+  else if (S.theme === "light" || S.theme === "dark") LOOK.theme = S.theme === "light" ? "sabah" : "gece";
+} catch(e) {}
+function saveLook(){ try { localStorage.setItem(LOOK_KEY, JSON.stringify(LOOK)); } catch(e) {} }
+function ensureFont(f){
+  const id = "font-" + f.replace(/\s+/g, "-");
+  if (!FONT_SPEC[f] || document.getElementById(id)) return;
+  const l = document.createElement("link");
+  l.id = id; l.rel = "stylesheet";
+  l.href = "https://fonts.googleapis.com/css2?family=" + FONT_SPEC[f] + "&display=swap";
+  document.head.appendChild(l);
+}
+const stack = (f, role) => '"' + f + '", ' + (f === "Caveat" ? '"Segoe Print", cursive' : SERIF.includes(f) ? "Georgia, serif" : role === "d" ? "Georgia, serif" : 'system-ui, -apple-system, "Segoe UI", sans-serif');
+const darkMQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+const hostTheme = document.documentElement.getAttribute("data-theme");
+function currentPalette(){
+  if (PALETTES[LOOK.theme]) return PALETTES[LOOK.theme];
+  const dark = hostTheme ? hostTheme === "dark" : !!(darkMQ && darkMQ.matches);
+  return dark ? PALETTES.gece : PALETTES.sabah;
+}
+function applyLook(){
+  const p = currentPalette(), base = p.dark ? DARK : LIGHT;
+  const a = ACCENTS[LOOK.accent] || ACCENTS[p.accent];
+  const r = document.documentElement.style;
+  const set = {bg:p.bg, surface:p.surface, sunk:p.sunk, ink:p.ink, muted:p.muted, line:p.line, lapis: p.dark ? a.dark : a.light,
+    gilt:base.gilt, rose:base.rose, "era-g":base.eg, "era-r":base.er, "era-m":base.em, ok:base.ok, okbg:base.okbg, bad:base.bad, badbg:base.badbg};
+  Object.keys(set).forEach(k => r.setProperty("--" + k, set[k]));
+  r.colorScheme = p.dark ? "dark" : "light";
+  ensureFont(LOOK.fontD); ensureFont(LOOK.fontB);
+  r.setProperty("--display", stack(LOOK.fontD, "d"));
+  r.setProperty("--body", stack(LOOK.fontB, "b"));
+  r.fontSize = (100 * LOOK.size / 16) + "%";
+}
+if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener("change", () => { if (LOOK.theme === "system") applyLook(); });
+
+// ---------- helpers ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const inSecs = () => C.filter(c => S.secs.includes(c.s)).map(c => c.id);
+const fmtDate = t => new Date(t).toLocaleString("tr-TR", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"});
+
+// ---------- views ----------
+const VIEWS = ["home","subject","learn","quiz","run","fill","frun","result","wrong","gloss","settings"];
+// Views that belong to the current subject, with their name in the breadcrumb.
+const IN_SUBJECT = {subject:"", learn:"Anlatım", quiz:"Test", run:"Test", fill:"Boşluk Doldurma", frun:"Boşluk Doldurma", result:"Sonuç", wrong:"Yanlışlarım", gloss:"Sözlük"};
+const NAV_OF = {run:"quiz", frun:"fill", result:null};
+let current = "home";
+function show(v, opts){
+  current = v;
+  VIEWS.forEach(x => { $("#v-" + x).hidden = x !== v; });
+  renderNav();
+  if (v === "home") renderHome();
+  if (v === "subject") renderSubject();
+  if (v === "learn" && !(opts && opts.keep)) openLearn();
+  if (v === "quiz") renderSetup();
+  if (v === "fill") renderFillSetup();
+  if (v === "wrong") renderWrong();
+  if (v === "gloss") { $("#g-q").value = S.gq || ""; $("#g-q").placeholder = SUB.search; renderGloss(); }
+  if (v === "settings") renderSettings();
+  renderChips();
+  window.scrollTo(0, 0);
+}
+const SUBNAV = [["learn","Anlatım"],["quiz","Test"],["fill","Boşluk Doldurma"],["wrong","Yanlışlarım"],["gloss","Sözlük"]];
+function openSubject(id, view){ useSubject(id); show(view || "subject"); }
+function renderNav(){
+  const inSubj = current in IN_SUBJECT;
+  const active = current in NAV_OF ? NAV_OF[current] : current;
+  $("#subjnav").innerHTML = SUBJECT_IDS.map(id => {
+    const sub = SUBJECTS[id], open = inSubj && SUB.id === id;
+    return '<button class="nv subj" data-sub="' + id + '"' + (open && current === "subject" ? ' aria-current="page"' : "") + ">" + esc(sub.name) + " <small>" + sub.C.length + "</small></button>" +
+      (open ? '<div class="subnav">' + SUBNAV.map(n => '<button class="nv" data-go="' + n[0] + '"' + (active === n[0] ? ' aria-current="page"' : "") + ">" + n[1] + "</button>").join("") + "</div>" : "");
+  }).join("");
+  $("#subjnav").querySelectorAll("[data-sub]").forEach(b => b.onclick = () => openSubject(b.dataset.sub));
+  $("#subjnav").querySelectorAll("[data-go]").forEach(b => b.onclick = () => show(b.dataset.go));
+  document.querySelectorAll(".side > [data-go], .side-foot [data-go]").forEach(b => {
+    if (b.dataset.go === active && !b.classList.contains("brand")) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  const parts = ['<button data-crumb="home">Ana sayfa</button>'];
+  if (inSubj) parts.push(current === "subject" ? '<span aria-current="page">' + esc(SUB.name) + "</span>" : '<button data-crumb="subject">' + esc(SUB.name) + "</button>");
+  if (inSubj && IN_SUBJECT[current]) parts.push('<span aria-current="page">' + IN_SUBJECT[current] + "</span>");
+  if (current === "settings") parts.push('<span aria-current="page">Ayarlar</span>');
+  $("#crumbs").innerHTML = current === "home" ? "" : parts.join("<span>›</span>");
+  $("#crumbs").querySelectorAll("[data-crumb]").forEach(b => b.onclick = () => show(b.dataset.crumb));
+}
+// After progress arrives from the account or the desktop file, redraw whatever is on screen.
+function rerender(){
+  if (current === "run") { if (S.quiz) drawQ(); else show("home"); }
+  else if (current === "frun") { if (S.fill) drawF(); else show("home"); }
+  else if (current !== "result") show(current);
+}
+document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => show(b.dataset.go));
+
+// "Yarım kalan" notices for unfinished tests and fill-in rounds, for the given subjects.
+function banners(box, ids){
+  box.innerHTML = "";
+  ids.forEach(sid => ["quiz", "fill"].forEach(kind => {
+    const st = R.subj[sid][kind];
+    if (!st) return;
+    const done = st.items.filter(x => kind === "quiz" ? x.chosen !== null : x.done).length;
+    const el = document.createElement("div");
+    el.className = "resume";
+    el.innerHTML = "<span>" + (ids.length > 1 ? "<b>" + esc(SUBJECTS[sid].name) + "</b> · " : "") +
+      (kind === "quiz" ? "Yarım kalan bir testin var: " : "Yarım kalan bir boşluk doldurma turun var: ") +
+      "<b>" + done + " / " + st.items.length + "</b>, " + st.right + " doğru.</span>" +
+      '<button class="btn pri sm" data-r="go">Devam et</button><button class="btn sm" data-r="drop">Bırak</button>';
+    el.querySelector('[data-r="go"]').onclick = () => {
+      useSubject(sid);
+      if (kind === "quiz") { show("run"); drawQ(); } else { show("frun"); drawF(); }
+    };
+    el.querySelector('[data-r="drop"]').onclick = () => { R.subj[sid][kind] = null; save(); show(current); };
+    box.appendChild(el);
+  }));
+  box.hidden = !box.children.length;
+}
+function renderHome(){
+  let answered = 0, tests = 0, last = 0;
+  $("#h-subjects").innerHTML = SUBJECT_IDS.map(id => {
+    const sub = SUBJECTS[id], P = R.subj[id], n = sub.C.length;
+    const seen = Object.keys(P.seen).length, wrongN = Object.keys(P.wrong).length;
+    const pct = P.answered ? Math.round(100 * P.correct / P.answered) : null;
+    answered += P.answered; tests += P.tests;
+    if (P.history.length) last = Math.max(last, P.history[0].at);
+    return '<button class="subj-card" data-sub="' + id + '">' +
+      '<span class="lbl">Ders</span><span class="t">' + esc(sub.name) + "</span>" +
+      '<span class="d">' + esc(sub.card) + " · Anlatım, Test, Boşluk Doldurma, Yanlışlarım, Sözlük</span>" +
+      '<span class="meterline"><i style="width:' + (100 * seen / n) + '%"></i></span>' +
+      '<span class="row2"><span>Görülen kart <b>' + seen + " / " + n + "</b></span><span>Doğruluk <b>" + (pct === null ? "–" : "%" + pct) + "</b></span><span>Tekrar bekleyen <b>" + wrongN + "</b></span></span>" +
+      '<span class="go">Derse git →</span>' +
+    "</button>";
+  }).join("");
+  $("#h-subjects").querySelectorAll("[data-sub]").forEach(b => b.onclick = () => openSubject(b.dataset.sub));
+  $("#stats").innerHTML =
+    "<span>Çözülen soru: <b>" + answered + "</b></span>" +
+    "<span>Biten test ve tur: <b>" + tests + "</b></span>" +
+    (last ? "<span>Son çalışma: <b>" + fmtDate(last) + "</b></span>" : "");
+  banners($("#h-banners"), SUBJECT_IDS);
+}
+function renderSubject(){
+  const seen = Object.keys(S.seen).length;
+  const wrongN = Object.keys(S.wrong).length;
+  const words = SUB.name.split(" ");
+  $("#s-title").innerHTML = esc(words.slice(0, -1).join(" ")) + " <em>" + esc(words[words.length - 1]) + "</em>";
+  $("#s-intro").textContent = SUB.intro;
+  $("#n-learn").textContent = seen + " / " + C.length + " kart görüldü";
+  const testN = S.answered - S.fa;
+  $("#n-quiz").textContent = S.quiz ? "Yarım kalan test var" : testN ? testN + " soru çözüldü" : "Henüz test çözülmedi";
+  $("#n-fill").textContent = S.fill ? "Yarım kalan tur var" : S.fa ? S.fa + " boşluk dolduruldu" : "Henüz başlanmadı";
+  $("#n-wrong").textContent = wrongN ? wrongN + " kavram tekrar bekliyor" : "Liste boş";
+  $("#n-gloss").textContent = C.length + " kavram";
+  const eras = {};
+  C.forEach(c => { const e = SECS[c.s].era; eras[e] = (eras[e] || 0) + 1; });
+  $("#s-eras").innerHTML = Object.keys(eras).map(e => '<span style="--c:var(--era-' + e + ')">' + esc(SUB.eraNames[e]) + " · " + eras[e] + " kavram</span>").join("");
+  banners($("#s-banners"), [SUB.id]);
+}
+
+// ---------- section chips (shared selection) ----------
+function renderChips(){
+  document.querySelectorAll("#v-" + current + " [data-chips]").forEach(box => {
+    box.innerHTML = SEC_IDS.map(s =>
+      '<button class="chip" style="--c:' + eraColor(s) + '" data-s="' + s + '" aria-pressed="' + S.secs.includes(s) + '">' + SECS[s].short + "</button>"
+    ).join("");
+    box.querySelectorAll(".chip").forEach(ch => ch.onclick = () => {
+      const s = ch.dataset.s;
+      if (S.secs.includes(s)) { if (S.secs.length === 1) return; S.secs = S.secs.filter(x => x !== s); }
+      else S.secs = SEC_IDS.filter(x => x === s || S.secs.includes(x));
+      save(); renderChips();
+      if (current === "learn") newDeck(inSecs(), "all");
+      if (current === "quiz") renderSetup();
+      if (current === "fill") renderFillSetup();
+      if (current === "gloss") renderGloss();
+    });
+  });
+}
+
+// ---------- learn (deck and position are saved) ----------
+let revealed = false;
+function newDeck(ids, src){ S.learn = {deck: shuffle(ids), at: 0, src: src}; save(); drawCard(); }
+function openLearn(){
+  $("#l-guess").checked = !!S.guess;
+  const L = S.learn;
+  const valid = L && Array.isArray(L.deck) && L.deck.length && L.at < L.deck.length &&
+    (L.src === "wrong" || L.deck.length === inSecs().length && L.deck.every(id => S.secs.includes(C[id].s)));
+  if (valid) drawCard(); else newDeck(inSecs(), "all");
+}
+function drawCard(){
+  const L = S.learn, c = C[L.deck[L.at]];
+  revealed = !S.guess;
+  if (!S.seen[c.id]) { S.seen[c.id] = 1; save(); }
+  $("#l-count").textContent = L.deck.length + " kavram, " + (L.src === "wrong" ? "yanlışlar listesinden" : "karışık sırada");
+  $("#l-pos").textContent = (L.at + 1) + " / " + L.deck.length;
+  $("#l-prev").disabled = L.at === 0;
+  const card = $("#l-card");
+  card.style.setProperty("--c", eraColor(c.s));
+  const head =
+    '<div class="meta"><span class="era">' + SECS[c.s].long + "</span>" + (c.date ? '<span class="date">' + esc(c.date) + "</span>" : "") + "</div>" +
+    '<h2 class="term">' + esc(c.en) + "</h2>";
+  if (!revealed) {
+    card.innerHTML = head + '<div class="veil">Bu kavram ne demekti? Önce kafanda cevapla.<button class="btn pri sm" id="l-reveal">Göster</button></div>';
+    $("#l-reveal").onclick = () => { revealed = true; fillCard(c, head); };
+  } else fillCard(c, head);
+}
+function fillCard(c, head){
+  $("#l-card").innerHTML = head +
+    (c.tr ? '<div class="trn">' + esc(c.tr) + "</div>" : "") +
+    '<div class="sect">' +
+      '<div class="blk k"><h3>Kısaca</h3><p>' + esc(c.k) + "</p></div>" +
+      '<div class="blk hook"><h3>Akılda kalsın</h3><p>' + esc(c.h) + "</p></div>" +
+      (c.ex ? '<div class="blk ex"><h3>Örnek</h3><p>' + esc(c.ex) + "</p></div>" : "") +
+      '<details class="def"><summary>' + SUB.defLabel + '</summary><p>' + esc(c.def) + "</p>" + (c.note ? "<p><i>Not: " + esc(c.note) + "</i></p>" : "") + "</details>" +
+    "</div>";
+}
+function step(d){
+  const L = S.learn, n = L.at + d;
+  if (n < 0) return;
+  if (n >= L.deck.length) { L.deck = shuffle(L.deck); L.at = 0; } else L.at = n;
+  save(); drawCard();
+}
+$("#l-prev").onclick = () => step(-1);
+$("#l-next").onclick = () => step(1);
+$("#l-shuffle").onclick = () => newDeck(S.learn && S.learn.src === "wrong" ? S.learn.deck : inSecs(), S.learn ? S.learn.src : "all");
+$("#l-guess").onchange = e => { S.guess = e.target.checked; save(); drawCard(); };
+let tx = null;
+$("#l-card").addEventListener("touchstart", e => { tx = e.touches[0].clientX; }, {passive:true});
+$("#l-card").addEventListener("touchend", e => { if (tx === null) return; const dx = e.changedTouches[0].clientX - tx; tx = null; if (Math.abs(dx) > 60) step(dx < 0 ? 1 : -1); });
+
+// ---------- quiz (a test in progress is saved after every answer) ----------
+const NS = [10, 20, 30, 50];
+function renderSetup(){
+  const pool = inSecs().length;
+  banners($("#q-banners"), [SUB.id]);
+  $("#q-pool").textContent = pool + " kavram arasından sorulacak";
+  $("#q-n").innerHTML = NS.map(n => '<button data-n="' + n + '" aria-pressed="' + (S.n === n) + '">' + n + "</button>").join("") +
+    '<button data-n="0" aria-pressed="' + (S.n === 0) + '">Hepsi (' + pool + ")</button>";
+  $("#q-n").querySelectorAll("button").forEach(b => b.onclick = () => { S.n = +b.dataset.n; save(); renderSetup(); });
+  $("#q-types").querySelectorAll("button").forEach(b => {
+    b.setAttribute("aria-pressed", !!S.types[b.dataset.t]);
+    b.onclick = () => {
+      const t = b.dataset.t, other = t === "text" ? "def" : "text";
+      if (S.types[t] && !S.types[other]) return;
+      S.types[t] = !S.types[t]; save(); renderSetup();
+    };
+  });
+}
+$("#q-start").onclick = () => runQuiz(inSecs(), S.n);
+
+// A question text must not contain the answer: neither the concept's name nor any accepted spelling of it.
+function mentions(c, txt){
+  const t = trLower(txt || "");
+  return alts(c).filter(a => a.length > 3).some(a => t.includes(trLower(a)));
+}
+const defUsable = c => !!c.def && !mentions(c, c.def);
+const textUsable = c => !!c.q && !mentions(c, c.q);
+function distractors(id){
+  const c = C[id], used = new Set([c.key]), out = [];
+  const ok = d => d.id !== id && !used.has(d.key) && !NOPE[id].has(d.id);
+  const tiers = [
+    C.filter(d => d.s === c.s),
+    C.filter(d => d.s !== c.s && SECS[d.s].era === SECS[c.s].era),
+    C.filter(d => SECS[d.s].era !== SECS[c.s].era && d.s.slice(1) === c.s.slice(1)),
+    C
+  ];
+  for (const tier of tiers) {
+    for (const d of shuffle(tier)) {
+      if (out.length === 3) return out;
+      if (ok(d) && !out.some(o => NOPE[o].has(d.id))) { out.push(d.id); used.add(d.key); }
+    }
+  }
+  return out;
+}
+function makeQ(id){
+  const c = C[id], types = [];
+  if (S.types.text && textUsable(c)) types.push("text");
+  if (S.types.def && defUsable(c)) types.push("def");
+  // The chosen type would give the answer away: use whichever text does not.
+  if (!types.length) types.push(textUsable(c) || !defUsable(c) ? "text" : "def");
+  return {id, t: pick(types), opts: shuffle([id].concat(distractors(id))), chosen: null};
+}
+const qText = q => q.t === "text" ? C[q.id].q : C[q.id].def;
+
+function runQuiz(ids, n, label){
+  const chosen = shuffle(ids).slice(0, n || ids.length);
+  S.quiz = {items: chosen.map(makeQ), i: 0, right: 0, label: label || "test", started: Date.now()};
+  save();
+  show("run"); drawQ();
+}
+function drawQ(){
+  const Q = S.quiz, q = Q.items[Q.i], c = C[q.id], total = Q.items.length;
+  $("#r-bar").style.width = (100 * Q.i / total) + "%";
+  $("#r-num").textContent = (Q.i + 1) + " / " + total + " · " + Q.right + " doğru";
+  $("#r-after").hidden = true;
+  const card = $("#r-card");
+  card.style.setProperty("--c", eraColor(c.s));
+  card.innerHTML =
+    '<div class="meta"><span class="era">' + SECS[c.s].short + "</span></div>" +
+    '<div class="ask">' + (q.t === "text" ? "Bu metin hangi kavramı anlatıyor?" : "Bu tanım hangi kavrama ait?") + "</div>" +
+    '<p class="passage' + (q.t === "def" ? " def" : "") + '">' + esc(qText(q)) + "</p>" +
+    '<div class="opts">' + q.opts.map((o, i) =>
+      '<button class="opt" data-i="' + i + '"><span class="L">' + "ABCD"[i] + '</span><span class="o"><b>' + esc(C[o].en) + '</b><small hidden>' + esc(C[o].tr) + "</small></span></button>"
+    ).join("") + "</div>" +
+    '<div id="r-fb"></div>';
+  card.querySelectorAll(".opt").forEach(b => b.onclick = () => answer(+b.dataset.i));
+  if (q.chosen !== null) markAnswer(q);
+}
+function answer(i){
+  const Q = S.quiz, q = Q.items[Q.i];
+  if (q.chosen !== null) return;
+  q.chosen = q.opts[i];
+  const good = q.chosen === q.id;
+  const cs = S.cs[q.id] || [0, 0];
+  S.answered++; cs[0]++;
+  if (good) { S.correct++; Q.right++; cs[1]++; delete S.wrong[q.id]; }
+  else S.wrong[q.id] = (S.wrong[q.id] || 0) + 1;
+  S.cs[q.id] = cs;
+  save();
+  markAnswer(q);
+  $("#r-next").focus({preventScroll:true});
+  $("#r-fb").scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+function markAnswer(q){
+  const c = C[q.id], good = q.chosen === q.id;
+  document.querySelectorAll("#r-card .opt").forEach((b, j) => {
+    b.disabled = true;
+    b.querySelector("small").hidden = false;
+    const o = q.opts[j];
+    if (o === q.id) b.classList.add("right");
+    else if (o === q.chosen) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  const mine = C[q.chosen];
+  $("#r-fb").innerHTML = good
+    ? '<div class="fb ok"><div class="head">Doğru! Bu ' + esc(c.en) + (c.tr ? " (" + esc(c.tr) + ")" : "") + ".</div><p>" + esc(c.k) + '</p><p class="tip"><b>Akılda kalsın:</b> ' + esc(c.h) + "</p></div>"
+    : '<div class="fb no"><div class="head">Doğru cevap: ' + esc(c.en) + (c.tr ? " (" + esc(c.tr) + ")" : "") + "</div>" +
+      "<p>" + esc(c.k) + "</p>" +
+      '<p class="tip"><b>Akılda kalsın:</b> ' + esc(c.h) + "</p>" +
+      (c.ex ? '<p class="tip"><b>Notlardaki örnek:</b> ' + esc(c.ex) + "</p>" : "") +
+      '<p class="mine">Senin seçtiğin <b>' + esc(mine.en) + "</b>" + (mine.tr ? " (" + esc(mine.tr) + ")" : "") + " ise başka bir şey: " + esc(mine.k) + "</p></div>";
+  $("#r-next").textContent = S.quiz.i + 1 < S.quiz.items.length ? "Sonraki soru →" : "Sonucu gör →";
+  $("#r-after").hidden = false;
+}
+$("#r-next").onclick = () => {
+  const Q = S.quiz;
+  if (Q.i + 1 < Q.items.length) { Q.i++; save(); drawQ(); window.scrollTo(0, 0); }
+  else showResult();
+};
+
+function showResult(){
+  const Q = S.quiz;
+  const missed = Q.items.filter(q => q.chosen !== q.id).map(q => ({id: q.id, your: C[q.chosen].en}));
+  S.quiz = null;
+  renderResult({right: Q.right, total: Q.items.length, label: Q.label, missed: missed,
+    again: ids => runQuiz(ids, 0, "wrong"), newView: "quiz", newLabel: "Yeni test"});
+}
+// Shared end screen for Test and Boşluk Doldurma; also records the finished round.
+function renderResult(o){
+  const pct = Math.round(100 * o.right / o.total);
+  S.tests++;
+  S.history.unshift({at: Date.now(), right: o.right, total: o.total, label: o.label});
+  S.history = S.history.slice(0, 30);
+  save();
+  const msg = pct === 100 ? "Kusursuz. Moiralar bile şaşırdı." :
+              pct >= 80 ? "Çok iyi! Birkaç küçük karışıklık kaldı." :
+              pct >= 50 ? "Yolun yarısı geçildi. Yanlışlara bir göz atalım." :
+              "Sorun değil, tekrar etmek için buradayız. Önce Anlatım'dan geçmek iyi gelebilir.";
+  $("#v-result").innerHTML =
+    '<div class="lbl">Sonuç · ' + (HIST_LABEL[o.label] || "Test") + "</div>" +
+    '<div class="score"><span class="big">' + o.right + " / " + o.total + '</span><span class="pct">%' + pct + "</span></div>" +
+    '<p class="msg">' + msg + "</p>" +
+    (o.missed.length ? '<div class="lbl">Karıştırdıkların</div><div class="list">' + o.missed.map(m => {
+      const c = C[m.id];
+      return '<div class="item" style="--c:' + eraColor(c.s) + '"><b>' + esc(c.en) + '</b> <span class="tr">' + esc(c.tr) + "</span><p>" + esc(c.k) + "</p><p>Senin cevabın: " + esc(m.your) + "</p></div>";
+    }).join("") + "</div>" : "") +
+    '<div class="actions">' +
+      (o.missed.length ? '<button class="btn pri" id="x-again">Yanlışları tekrar çöz</button>' : "") +
+      '<button class="btn' + (o.missed.length ? "" : " pri") + '" id="x-new">' + o.newLabel + "</button>" +
+      '<button class="btn" id="x-home">Ana sayfa</button>' +
+    "</div>";
+  show("result");
+  if (o.missed.length) $("#x-again").onclick = () => o.again(o.missed.map(m => m.id));
+  $("#x-new").onclick = () => show(o.newView);
+  $("#x-home").onclick = () => show("home");
+}
+const HIST_LABEL = {test:"Test", wrong:"Test · yanlışlar", fill:"Boşluk doldurma", fillwrong:"Boşluk doldurma · yanlışlar"};
+
+// ---------- fill in the blank (a round in progress is saved after every answer) ----------
+const GAP = "\u0001";
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const alts = c => c.en.split(" / ").map(s => s.trim()).concat(c.alt || []);
+function blankIn(c, txt){
+  for (const a of alts(c)) {
+    const src = "(?<![\\p{L}\\p{N}])" + reEsc(a) + "(?:e?s)?(?![\\p{L}\\p{N}])";
+    const m = txt.match(new RegExp(src, "iu"));
+    if (m) return {text: txt.replace(new RegExp(src, "giu"), GAP), surf: m[0]};
+  }
+  return null;
+}
+SUBJECTS.en.C.forEach(c => { c.hasEx = !!(c.ex && blankIn(c, c.ex)); });
+// Eğitime Giriş has hand-written sentences (cz) with ___ where the concept goes; İngilizce Kavramlar blanks the notes' own sentences.
+function cloze(c, src){
+  if (c.cz) return {src: "cz", text: c.cz.replace("___", GAP), surf: c.cs};
+  if (src === "ex") { const b = blankIn(c, c.ex); if (b) return Object.assign(b, {src: "ex"}); }
+  const b = blankIn(c, c.def);
+  if (b) return Object.assign(b, {src: "def"});
+  const lead = /^(A|An|The) /.test(c.def);
+  return {src: "def", surf: alts(c)[0], text: lead ? GAP + " is " + c.def[0].toLowerCase() + c.def.slice(1) : GAP + ": " + c.def};
+}
+const akey = s => s.toLocaleLowerCase("tr").replace(/ı/g, "i").normalize("NFD").replace(/[̀-ͯ]/g, "")
+  .replace(/[’'`]/g, "").replace(/[^a-z0-9]+/g, " ").trim().replace(/^the /, "").replace(/(es|s)$/, "");
+function lev(a, b){
+  const d = Array.from({length: b.length + 1}, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    let prev = d[0]; d[0] = i;
+    for (let j = 1; j <= b.length; j++) { const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = t; }
+  }
+  return d[b.length];
+}
+function judge(c, surf, val){
+  const v = akey(val);
+  if (!v) return false;
+  const targets = alts(c).concat([surf, c.en]).map(akey);
+  // Turkish terms: also accept the answer without a generic last word ("örgün" for "örgün eğitim", "oral" for "oral dönem").
+  targets.slice().forEach(t => { const u = t.replace(/ (egitim|egitimi|donem|donemi|evre|evresi|ilke|ilkesi|kuram|kurami|duzey|duzeyi|hareketi|teskilati|mektebi|kulliyesi|medresesi|gelisim)$/, ""); if (u && u !== t) targets.push(u); });
+  if (targets.includes(v)) return "exact";
+  return targets.some(t => lev(v, t) <= (t.length >= 9 ? 2 : t.length >= 5 ? 1 : 0)) ? "close" : false;
+}
+const conceptNamed = val => C.find(d => alts(d).some(a => akey(a) === akey(val)));
+
+function renderFillSetup(){
+  const pool = inSecs().length;
+  banners($("#f-banners"), [SUB.id]);
+  $("#f-pool").textContent = pool + " kavram arasından sorulacak";
+  $("#f-n").innerHTML = NS.map(n => '<button data-n="' + n + '" aria-pressed="' + (S.fn === n) + '">' + n + "</button>").join("") +
+    '<button data-n="0" aria-pressed="' + (S.fn === 0) + '">Hepsi (' + pool + ")</button>";
+  $("#f-n").querySelectorAll("button").forEach(b => b.onclick = () => { S.fn = +b.dataset.n; save(); renderFillSetup(); });
+  $("#f-mode").querySelectorAll("button").forEach(b => {
+    b.setAttribute("aria-pressed", S.fmode === b.dataset.m);
+    b.onclick = () => { S.fmode = b.dataset.m; save(); renderFillSetup(); };
+  });
+}
+$("#f-start").onclick = () => runFill(inSecs(), S.fn);
+function runFill(ids, n, label){
+  const chosen = shuffle(ids).slice(0, n || ids.length);
+  S.fill = {
+    mode: S.fmode, i: 0, right: 0, label: label || "fill",
+    items: chosen.map(id => ({id, src: C[id].cz ? "cz" : C[id].hasEx && Math.random() < 0.7 ? "ex" : "def",
+      opts: shuffle([id].concat(distractors(id))), hint: 0, done: false, ok: false, close: false, typed: ""}))
+  };
+  save();
+  show("frun"); drawF();
+}
+function drawF(){
+  const F = S.fill, f = F.items[F.i], c = C[f.id], z = cloze(c, f.src), total = F.items.length;
+  $("#f-bar").style.width = (100 * F.i / total) + "%";
+  $("#f-num").textContent = (F.i + 1) + " / " + total + " · " + F.right + " doğru";
+  $("#f-after").hidden = !f.done;
+  const card = $("#f-card");
+  card.style.setProperty("--c", eraColor(c.s));
+  const gap = f.done ? '<span class="gap filled">' + esc(z.surf) + "</span>" : '<span class="gap" aria-label="boşluk">&nbsp;</span>';
+  const pattern = z.surf.split(" ").map(w => w[0].toUpperCase() + " _".repeat(Math.max(0, w.length - 1))).join("   ");
+  let first = SUB.lang === "tr" ? c.k : c.tr;
+  if (SUB.lang === "tr") alts(c).forEach(a => { first = first.replace(new RegExp(reEsc(a), "giu"), "…"); });
+  const hints = (f.hint >= 1 ? "<div>" + (SUB.lang === "tr" ? "Kısaca" : "Türkçesi") + ": <b>" + esc(first) + "</b></div>" : "") +
+                (f.hint >= 2 ? '<div>Harfler: <span class="pat">' + esc(pattern) + "</span> (" + z.surf.replace(/\s/g, "").length + " harf)</div>" : "");
+  let body;
+  if (F.mode === "pick") {
+    body = '<div class="opts">' + f.opts.map((o, i) =>
+      '<button class="opt" data-i="' + i + '"' + (f.done ? " disabled" : "") + '><span class="L">' + "ABCD"[i] + '</span><span class="o"><b>' + esc(C[o].en) + "</b>" +
+      (f.done ? "<small>" + esc(C[o].tr) + "</small>" : "") + "</span></button>").join("") + "</div>";
+  } else {
+    body = '<div class="answer"><input id="f-in" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + (SUB.lang === "tr" ? "Kavramı yaz…" : "Kavramı İngilizce yaz…") + '" value="' + esc(f.typed) + '"' + (f.done ? " disabled" : "") + ">" +
+      (f.done ? "" : '<button class="btn pri" id="f-check">Kontrol et</button>') + "</div>" +
+      (f.done ? "" : '<div class="hintrow"><button class="linkbtn" id="f-hint"' + (f.hint >= 2 ? " disabled" : "") + ">" + (f.hint ? "Bir ipucu daha" : "İpucu al") + '</button><button class="linkbtn" id="f-skip">Bilmiyorum, göster</button></div>');
+  }
+  card.innerHTML =
+    '<div class="meta"><span class="era">' + SECS[c.s].short + '</span><span class="date">' + (z.src === "ex" ? "Notlarındaki örnek cümle" : z.src === "cz" ? "Notlarına dayalı cümle" : "Notlarındaki tanım") + "</span></div>" +
+    '<div class="ask">Boşluğa hangi kavram gelir?</div>' +
+    '<p class="passage' + (z.src === "def" ? " def" : "") + '">' + esc(z.text).split(GAP).join(gap) + "</p>" +
+    body + (hints ? '<div class="hints">' + hints + "</div>" : "") + '<div id="f-fb"></div>';
+  if (F.mode === "pick") {
+    card.querySelectorAll(".opt").forEach((b, i) => {
+      if (f.done) { const o = f.opts[i]; b.classList.add(o === f.id ? "right" : o === f.chosen ? "wrong" : "dim"); }
+      else b.onclick = () => finishF(f.opts[i] === f.id, C[f.opts[i]].en, false, f.opts[i]);
+    });
+  } else if (!f.done) {
+    const inp = $("#f-in");
+    const check = () => { const val = inp.value.trim(); if (!val) { inp.focus(); return; } const r = judge(c, z.surf, val); finishF(!!r, val, r === "close"); };
+    $("#f-check").onclick = check;
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); check(); } });
+    inp.addEventListener("input", () => { f.typed = inp.value; });
+    $("#f-hint").onclick = () => { f.typed = inp.value; f.hint = Math.min(2, f.hint + 1); save(); drawF(); $("#f-in").focus(); };
+    $("#f-skip").onclick = () => finishF(false, "", false);
+    inp.focus({preventScroll: true});
+  }
+  if (f.done) {
+    const mine = f.chosen !== undefined && f.chosen !== null ? C[f.chosen] : (f.typed ? conceptNamed(f.typed) : null);
+    const name = esc(c.en) + (c.tr ? " (" + esc(c.tr) + ")" : "");
+    $("#f-fb").innerHTML = f.ok
+      ? '<div class="fb ok"><div class="head">Doğru! ' + (f.close ? "Küçük bir yazım farkı var; doğrusu <b>" + esc(z.surf) + "</b>." : "Bu " + name + ".") + "</div><p>" + esc(c.k) + '</p><p class="tip"><b>Akılda kalsın:</b> ' + esc(c.h) + "</p></div>"
+      : '<div class="fb no"><div class="head">Doğru cevap: ' + name + "</div><p>" + esc(c.k) + '</p><p class="tip"><b>Akılda kalsın:</b> ' + esc(c.h) + "</p>" +
+        '<p class="mine">' + (!f.typed ? "Bu boşluğu bilmiyorum diyerek geçtin." :
+          mine && mine.id !== c.id ? "Senin cevabın <b>" + esc(mine.en) + "</b>" + (mine.tr ? " (" + esc(mine.tr) + ")" : "") + " ise başka bir şey: " + esc(mine.k) :
+          "Senin cevabın: <b>" + esc(f.typed) + "</b>") + "</p></div>";
+    $("#f-next").textContent = F.i + 1 < total ? "Sonraki →" : "Sonucu gör →";
+  }
+}
+function finishF(ok, typed, close, chosen){
+  const F = S.fill, f = F.items[F.i];
+  if (f.done) return;
+  Object.assign(f, {done: true, ok: ok, typed: typed, close: close, chosen: chosen === undefined ? null : chosen});
+  const cs = S.cs[f.id] || [0, 0];
+  S.answered++; S.fa++; cs[0]++;
+  if (ok) { S.correct++; S.fc++; F.right++; cs[1]++; delete S.wrong[f.id]; }
+  else S.wrong[f.id] = (S.wrong[f.id] || 0) + 1;
+  S.cs[f.id] = cs;
+  save();
+  drawF();
+  $("#f-next").focus({preventScroll: true});
+  $("#f-fb").scrollIntoView({behavior: "smooth", block: "nearest"});
+}
+$("#f-next").onclick = () => {
+  const F = S.fill;
+  if (F.i + 1 < F.items.length) { F.i++; save(); drawF(); window.scrollTo(0, 0); return; }
+  const missed = F.items.filter(f => !f.ok).map(f => ({id: f.id, your: f.typed || "boş geçildi"}));
+  S.fill = null;
+  renderResult({right: F.right, total: F.items.length, label: F.label, missed: missed,
+    again: ids => runFill(ids, 0, "fillwrong"), newView: "fill", newLabel: "Yeni tur"});
+};
+
+// ---------- wrong box ----------
+function renderWrong(){
+  const ids = Object.keys(S.wrong).map(Number).sort((a, b) => S.wrong[b] - S.wrong[a]);
+  const box = $("#v-wrong");
+  if (!ids.length) {
+    box.innerHTML = '<h2 class="vt">Yanlışlarım</h2><div class="empty"><h2>Liste şu an boş</h2><p>Testte yanlış işaretlediğin kavramlar buraya gelir. Bir kavramı sonraki testte doğru bilince listeden kendiliğinden çıkar.</p><div class="actions" style="margin-top:12px"><button class="btn pri" id="w-quiz">Teste git</button></div></div>';
+    $("#w-quiz").onclick = () => show("quiz");
+    return;
+  }
+  box.innerHTML = '<h2 class="vt">Yanlışlarım</h2><p class="vd">' + ids.length + " kavram tekrar bekliyor. Doğru bildiğin anda listeden çıkar.</p>" +
+    '<div class="actions"><button class="btn pri" id="w-quiz">Bunlardan test yap</button><button class="btn" id="w-fill">Boşluk doldurmayla çalış</button><button class="btn" id="w-learn">Kartlarla çalış</button></div>' +
+    '<div class="list">' + ids.map(id => {
+      const c = C[id];
+      return '<div class="item" style="--c:' + eraColor(c.s) + '"><b>' + esc(c.en) + '</b> <span class="tr">' + esc(c.tr) + "</span><p>" + esc(c.k) + '</p><p style="color:var(--gilt)">' + esc(c.h) + "</p><p>" + S.wrong[id] + " kez karıştırıldı</p></div>";
+    }).join("") + "</div>";
+  $("#w-quiz").onclick = () => runQuiz(ids, 0, "wrong");
+  $("#w-fill").onclick = () => runFill(ids, 0, "fillwrong");
+  $("#w-learn").onclick = () => { S.learn = {deck: shuffle(ids), at: 0, src: "wrong"}; save(); show("learn", {keep:true}); $("#l-guess").checked = !!S.guess; drawCard(); };
+}
+
+// ---------- glossary ----------
+function renderGloss(){
+  const q = trLower($("#g-q").value.trim());
+  const rows = C.filter(c => S.secs.includes(c.s) && (!q || trLower(c.en + " " + c.tr + " " + c.k + " " + c.def + " " + c.ex).includes(q)));
+  $("#g-count").textContent = rows.length + " kavram";
+  $("#g-list").innerHTML = rows.map(c =>
+    '<details style="--c:' + eraColor(c.s) + '"><summary><b>' + esc(c.en) + "</b><span>" + esc(c.tr) + (c.date ? " · " + esc(c.date) : "") + "</span></summary>" +
+    '<div class="body"><p>' + esc(c.k) + '</p><p class="h">' + esc(c.h) + "</p>" + (c.ex ? "<p><i>" + esc(c.ex) + "</i></p>" : "") + '<p style="color:var(--muted)">' + esc(c.def) + "</p></div></details>"
+  ).join("");
+}
+let gTimer = null;
+$("#g-q").addEventListener("input", () => { renderGloss(); clearTimeout(gTimer); gTimer = setTimeout(() => { S.gq = $("#g-q").value; save(); }, 800); });
+
+// ---------- settings ----------
+let confirmFor = null, doneMsg = "";
+// One statistics panel per subject.
+function statsPanel(id){
+  const sub = SUBJECTS[id], P = R.subj[id];
+  const seen = Object.keys(P.seen).length, wrongN = Object.keys(P.wrong).length;
+  const pct = P.answered ? "%" + Math.round(100 * P.correct / P.answered) : "–";
+  const bySec = sub.ids.map(s => {
+    let a = 0, r = 0;
+    sub.C.forEach(c => { if (c.s === s && P.cs[c.id]) { a += P.cs[c.id][0]; r += P.cs[c.id][1]; } });
+    return {s, p: a ? Math.round(100 * r / a) : null};
+  });
+  const tN = P.answered - P.fa;
+  return '<div class="panel"><h3>İstatistikler · ' + esc(sub.name) + "</h3>" +
+    '<div class="tiles">' +
+      '<div class="tile"><b>' + seen + '</b><span>görülen kart / ' + sub.C.length + "</span></div>" +
+      '<div class="tile"><b>' + P.answered + '</b><span>çözülen soru</span></div>' +
+      '<div class="tile"><b>' + pct + '</b><span>doğruluk</span></div>' +
+      '<div class="tile"><b>' + P.tests + '</b><span>biten test ve tur</span></div>' +
+    "</div>" +
+    '<div class="lbl">Bölümlere göre doğruluk</div>' +
+    bySec.map(b => '<div class="meter" style="--c:' + eraColorOf(sub, b.s) + '"><span class="nm">' + sub.secs[b.s].short + '</span><span class="bar2"><i style="width:' + (b.p || 0) + '%"></i></span><span class="v">' + (b.p === null ? "–" : "%" + b.p) + "</span></div>").join("") +
+    '<div class="lbl">Son testler</div>' +
+    (P.history.length ? '<div class="hist">' + P.history.slice(0, 6).map(h =>
+      "<div><span>" + fmtDate(h.at) + " · " + (HIST_LABEL[h.label] || "Test") + "</span><b>" + h.right + " / " + h.total + " · %" + Math.round(100 * h.right / h.total) + "</b></div>").join("") + "</div>"
+      : "<p>Henüz bitirilmiş test yok.</p>") +
+    "<p>Test: " + tN + " soru, doğruluk " + (tN ? "%" + Math.round(100 * (P.correct - P.fc) / tN) : "–") +
+      " · Boşluk doldurma: " + P.fa + " cevap, doğruluk " + (P.fa ? "%" + Math.round(100 * P.fc / P.fa) : "–") + ".</p>" +
+    "<p>Yanlışlarım listesinde şu an " + wrongN + " kavram var.</p>" +
+  "</div>";
+}
+function renderSettings(){
+  const where = desktop
+    ? "Her hareketin bu bilgisayarda, kullanıcı klasöründeki SimgeWorkshop klasörüne anında kaydediliyor. Uygulamayı kapatıp açınca ilerlemen yerinde durur."
+    : syncState === "cloud" || syncState === "saving"
+    ? "Her hareketin hem bu tarayıcıya hem de hesabındaki sana özel alana anında kaydediliyor. Başka bir cihazdan girdiğinde kaldığın yerden devam edersin."
+    : "Her hareketin bu tarayıcıya anında kaydediliyor. Hesabına bağlanabildiğinde ilerlemen oraya da kaydedilir ve başka cihazlarda da görünür.";
+  const confirmBox = (what) => confirmFor !== what ? "" :
+    '<div class="confirm"><span>' + (what === "stats"
+      ? "Çözülen sorular, doğruluk, test ve boşluk doldurma geçmişi, görülen kartlar ve Yanlışlarım listesi silinecek. Ayarların kalır."
+      : "Her şey ilk günkü haline döner: bütün istatistikler, Yanlışlarım listesi, yarım kalan turlar, bütün ayarlar ve bu cihazdaki görünüm.") +
+    ' Bu geri alınamaz.</span><button class="btn danger solid sm" data-yes="' + what + '">Evet, sıfırla</button><button class="btn sm" data-no>Vazgeç</button></div>';
+  FONTS_D.concat(FONTS_B).forEach(f => ensureFont(f[0]));
+  const swatch = (key, name, bg, surf, ink, line, dot) =>
+    '<button class="sw" data-theme-v="' + key + '" aria-pressed="' + (LOOK.theme === key) + '">' +
+      '<span class="sw-prev" style="background:' + bg + ";border-color:" + line + '"><span class="sw-card" style="background:' + surf + ";color:" + ink + '">Aa</span><span class="sw-dot" style="background:' + dot + '"></span></span>' +
+      '<span class="sw-name">' + name + "</span></button>";
+  const sysP = darkMQ && darkMQ.matches ? PALETTES.gece : PALETTES.sabah;
+  const lookPanel =
+    '<div class="panel"><h3>Görünüm</h3>' +
+      "<p>Seçtiğin renkler ve yazılar hemen uygulanır ve sadece bu cihazda geçerlidir; başka bir bilgisayardaki uygulamayı değiştirmez.</p>" +
+      '<div class="lbl">Arka plan</div><div class="swatches">' +
+        '<button class="sw" data-theme-v="system" aria-pressed="' + (LOOK.theme === "system") + '"><span class="sw-prev" style="background:linear-gradient(135deg,#F1F2F7 50%,#10132A 50%);border-color:' + sysP.line + '"><span class="sw-card" style="background:' + sysP.surface + ";color:" + sysP.ink + '">Aa</span></span><span class="sw-name">Cihaza göre</span></button>' +
+        Object.keys(PALETTES).map(k => { const p = PALETTES[k], a = ACCENTS[p.accent]; return swatch(k, p.name, p.bg, p.surface, p.ink, p.line, p.dark ? a.dark : a.light); }).join("") +
+      "</div>" +
+      '<div class="lbl">Vurgu rengi</div><div class="seg" id="s-accent">' +
+        '<button data-v="auto" aria-pressed="' + (LOOK.accent === "auto") + '">Arka plana uygun</button>' +
+        Object.keys(ACCENTS).map(k => { const a = ACCENTS[k], d = currentPalette().dark; return '<button data-v="' + k + '" aria-pressed="' + (LOOK.accent === k) + '"><span class="dot" style="background:' + (d ? a.dark : a.light) + '"></span>' + a.name + "</button>"; }).join("") +
+      "</div>" +
+      '<div class="lbl">Başlık yazı tipi</div><div class="seg fontseg" id="s-fontd">' +
+        FONTS_D.map(f => '<button data-v="' + f[0] + '" aria-pressed="' + (LOOK.fontD === f[0]) + '" style="font-family:' + esc(stack(f[0], "d")) + '">' + f[1] + "</button>").join("") +
+      "</div>" +
+      '<div class="lbl">Metin yazı tipi</div><div class="seg fontseg" id="s-fontb">' +
+        FONTS_B.map(f => '<button data-v="' + f[0] + '" aria-pressed="' + (LOOK.fontB === f[0]) + '" style="font-family:' + esc(stack(f[0], "b")) + '">' + f[1] + "</button>").join("") +
+      "</div>" +
+      '<div class="lbl">Yazı boyutu</div><div class="seg" id="s-size">' +
+        SIZES.map(s => '<button data-v="' + s[0] + '" aria-pressed="' + (LOOK.size === s[0]) + '">' + s[1] + "</button>").join("") +
+      "</div>" +
+      '<div><button class="btn sm" id="s-lookreset">Görünümü varsayılana döndür</button></div>' +
+    "</div>";
+  $("#v-settings").innerHTML =
+    '<h2 class="vt">Ayarlar</h2><p class="vd">Görünüm, istatistikler, tercihler ve sıfırlama seçenekleri.</p><div class="sets">' +
+    lookPanel +
+
+    SUBJECT_IDS.map(statsPanel).join("") +
+
+    '<div class="panel"><h3>Tercihler</h3>' +
+      '<div class="opt-row"><div class="lab"><b>Anlatımda önce tahmin et</b><small>Kartta açıklama, sen “Göster” deyince açılır</small></div><label class="toggle"><input type="checkbox" id="s-guess"' + (S.guess ? " checked" : "") + "> Açık</label></div>" +
+      '<div class="opt-row"><div class="lab"><b>Varsayılan soru sayısı</b></div><div class="seg" id="s-n">' +
+        NS.concat([0]).map(n => '<button data-v="' + n + '" aria-pressed="' + (S.n === n) + '">' + (n || "Hepsi") + "</button>").join("") + "</div></div>" +
+    "</div>" +
+
+    '<div class="panel"><h3>Kayıt</h3><p>' + where + "</p>" +
+      '<p>Durum: <b style="color:var(--ink)">' + SYNC_TEXT[syncState] + "</b>" + (R.updatedAt ? " · son kayıt " + fmtDate(R.updatedAt) : "") + "</p></div>" +
+
+    '<div class="panel danger-zone"><h3>Sıfırla</h3>' +
+      (doneMsg ? '<div class="done">' + doneMsg + "</div>" : "") +
+      '<div class="opt-row"><div class="lab"><b>İstatistikleri sıfırla</b><small>Bütün derslerde sorular, doğruluk, test geçmişi, görülen kartlar ve Yanlışlarım silinir; ayarlar kalır.</small></div><button class="btn danger sm" data-ask="stats">İstatistikleri sıfırla</button></div>' +
+      confirmBox("stats") +
+      '<div class="opt-row"><div class="lab"><b>Her şeyi sıfırla</b><small>Uygulama ilk açıldığı haline döner: istatistikler ve bütün ayarlar.</small></div><button class="btn danger sm" data-ask="all">Her şeyi sıfırla</button></div>' +
+      confirmBox("all") +
+    "</div></div>";
+
+  const box = $("#v-settings");
+  const setLook = (k, v) => { LOOK[k] = v; saveLook(); applyLook(); renderSettings(); };
+  box.querySelectorAll("[data-theme-v]").forEach(b => b.onclick = () => setLook("theme", b.dataset.themeV));
+  box.querySelectorAll("#s-accent button").forEach(b => b.onclick = () => setLook("accent", b.dataset.v));
+  box.querySelectorAll("#s-fontd button").forEach(b => b.onclick = () => setLook("fontD", b.dataset.v));
+  box.querySelectorAll("#s-fontb button").forEach(b => b.onclick = () => setLook("fontB", b.dataset.v));
+  box.querySelectorAll("#s-size button").forEach(b => b.onclick = () => setLook("size", +b.dataset.v));
+  $("#s-lookreset").onclick = () => { LOOK = freshLook(); saveLook(); applyLook(); renderSettings(); };
+  // Preferences apply to every subject.
+  box.querySelectorAll("#s-n button").forEach(b => b.onclick = () => { SUBJECT_IDS.forEach(id => { R.subj[id].n = +b.dataset.v; }); save(); renderSettings(); });
+  $("#s-guess").onchange = e => { SUBJECT_IDS.forEach(id => { R.subj[id].guess = e.target.checked; }); save(); };
+  box.querySelectorAll("[data-ask]").forEach(b => b.onclick = () => { confirmFor = b.dataset.ask; doneMsg = ""; renderSettings(); });
+  box.querySelectorAll("[data-no]").forEach(b => b.onclick = () => { confirmFor = null; renderSettings(); });
+  box.querySelectorAll("[data-yes]").forEach(b => b.onclick = () => {
+    if (b.dataset.yes === "stats") {
+      SUBJECT_IDS.forEach(id => { const blank = freshSub(id); STATS_KEYS.forEach(k => { R.subj[id][k] = blank[k]; }); });
+      doneMsg = "İstatistikler sıfırlandı.";
+    } else {
+      R = normalizeRoot({}); S = R.subj[SUB.id];
+      LOOK = freshLook(); saveLook(); applyLook();
+      doneMsg = "Her şey sıfırlandı.";
+    }
+    confirmFor = null;
+    save(); renderSettings();
+  });
+}
+
+// ---------- keyboard ----------
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, textarea")) return;
+  if (current === "learn") {
+    if (e.key === "ArrowRight") step(1);
+    else if (e.key === "ArrowLeft") step(-1);
+    else if (e.key === " " && !revealed) { e.preventDefault(); $("#l-reveal").click(); }
+  } else if (current === "run" && S.quiz) {
+    const q = S.quiz.items[S.quiz.i];
+    const idx = {"1":0,"2":1,"3":2,"4":3,a:0,b:1,c:2,d:3}[e.key.toLowerCase()];
+    if (q.chosen === null && idx !== undefined && idx < q.opts.length) answer(idx);
+    else if (q.chosen !== null && e.key === "Enter" && document.activeElement !== $("#r-next")) $("#r-next").click();
+  } else if (current === "frun" && S.fill) {
+    const f = S.fill.items[S.fill.i];
+    const idx = {"1":0,"2":1,"3":2,"4":3,a:0,b:1,c:2,d:3}[e.key.toLowerCase()];
+    if (!f.done && S.fill.mode === "pick" && idx !== undefined) document.querySelectorAll("#f-card .opt")[idx].click();
+    else if (f.done && e.key === "Enter" && document.activeElement !== $("#f-next")) $("#f-next").click();
+  }
+});
+
+applyLook();
+show("home");
+if (window.pywebview && window.pywebview.api) initDesktop();
+else window.addEventListener("pywebviewready", initDesktop);
+initCloud();
+})();
+</script>
+
+</body></html>
