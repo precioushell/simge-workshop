@@ -264,6 +264,21 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
 .confirm span{flex:1;min-width:12rem}
 .done{color:var(--ok);font-size:.9rem;font-weight:500}
 
+/* new-version notice and release notes */
+.update-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;max-width:800px;margin-bottom:16px;padding:12px 16px;border-radius:12px;background:color-mix(in srgb, var(--rose) 13%, var(--surface));border:1px solid color-mix(in srgb, var(--rose) 45%, var(--line))}
+.update-bar span{flex:1;min-width:12rem}
+.update-bar b{color:var(--rose)}
+.notes{margin-top:28px}
+.note{display:grid;grid-template-columns:7.5rem minmax(0,1fr);gap:4px 16px;padding:12px 0;border-top:1px solid var(--line)}
+.notes .lbl + .note{border-top:0}
+.note .when{font-size:.84rem;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px}
+.note .what{min-width:0}
+.note .what b{font-weight:600}
+.note ul{margin:4px 0 0;padding-left:1.1em;color:var(--muted);font-size:.93rem}
+.note li{margin:2px 0}
+.badge{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.72rem;font-weight:600;color:var(--bg);background:var(--rose);vertical-align:2px}
+@media (max-width:560px){.note{grid-template-columns:1fr}}
+
 /* home: subject cards */
 .subjects{display:grid;gap:12px;margin:10px 0 6px}
 .subj-card{display:grid;gap:8px;text-align:left;background:var(--surface);border:1px solid color-mix(in srgb, var(--lapis) 40%, var(--line));border-radius:16px;padding:20px}
@@ -306,6 +321,7 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
   </aside>
 
   <main class="main">
+  <div class="update-bar" id="update-bar" role="status" hidden></div>
   <nav class="crumbs" id="crumbs" aria-label="Konum"></nav>
 
   <!-- HOME -->
@@ -315,10 +331,12 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
       <h1>Bugün ne <em>çalışalım</em>?</h1>
       <p>Soldan bir ders seç. Yaptığın her şey otomatik kaydedilir.</p>
     </div>
+    <div class="resume" id="h-updated" hidden></div>
     <div class="banners" id="h-banners" hidden></div>
     <div class="lbl">Derslerin</div>
     <div class="subjects" id="h-subjects"></div>
     <div class="stats" id="stats"></div>
+    <div class="notes" id="h-notes"></div>
   </section>
 
   <!-- SUBJECT (ders): filled in for the chosen subject -->
@@ -478,11 +496,11 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
   </main>
 </div>
 
-<script src="base.js"></script>
-<script src="notes-greek.js"></script>
-<script src="notes-roman.js"></script>
-<script src="notes-medieval.js"></script>
-<script src="edu.js"></script>
+<script src="base.js?v=20261103223133"></script>
+<script src="notes-greek.js?v=20261103223133"></script>
+<script src="notes-roman.js?v=20261103223133"></script>
+<script src="notes-medieval.js?v=20261103223133"></script>
+<script src="edu.js?v=20261103223133"></script>
 <script>
 (function(){
 const trLower = s => s.toLocaleLowerCase("tr");
@@ -837,6 +855,94 @@ function renderHome(){
     "<span>Biten test ve tur: <b>" + tests + "</b></span>" +
     (last ? "<span>Son çalışma: <b>" + fmtDate(last) + "</b></span>" : "");
   banners($("#h-banners"), SUBJECT_IDS);
+  renderNotes();
+}
+
+// ---------- release notes (newest first; add each update at the top) ----------
+const RELEASES = [
+  {id:"2026-11-03-notes", date:"3 Kasım 2026", title:"Güncelleme notları ve yeni sürüm uyarısı", items:[
+    "Ana sayfaya bu güncelleme notları eklendi.",
+    "İnternette yeni bir sürüm olduğunda uygulama üstte uyarı gösteriyor.",
+    "Bu, otomatik güncellemenin ilk denemesi: yeni .exe gerekmeden geldi."]},
+  {id:"2026-11-03-autoupdate", date:"3 Kasım 2026", title:"Otomatik güncelleme", items:[
+    "Masaüstü uygulaması açılırken yeni sürüm var mı diye bakıyor ve varsa kendisi indiriyor.",
+    "İlerleme ve istatistikler güncellemelerden etkilenmiyor.",
+    "İnternet yoksa en son indirilen sürümle açılıyor."]},
+  {id:"2026-11-03-testfix", date:"3 Kasım 2026", title:"Test düzeltmesi", items:[
+    "Cevabını içinde barındıran tanım soruları artık sorulmuyor.",
+    "Eğitime Giriş’te ipucu veren 5 boşluk doldurma cümlesi yenilendi."]},
+  {id:"2026-11-03-egitim", date:"3 Kasım 2026", title:"Yeni ders: Eğitime Giriş", items:[
+    "1-7. hafta notlarından 156 kavram: temel kavramlar, işlevler ve amaçlar, tarihi, felsefi ve psikolojik temeller.",
+    "Anlatım, Test, Boşluk Doldurma, Yanlışlarım ve Sözlük bu derste de var.",
+    "Ayarlar’da istatistikler ders ders gösteriliyor."]},
+  {id:"2026-11-02-look", date:"2 Kasım 2026", title:"Yeni düzen ve görünüm ayarları", items:[
+    "Sol menüde dersler; uygulama her zaman ana sayfadan açılıyor.",
+    "9 arka plan rengi, vurgu rengi, başlık ve metin yazı tipi, yazı boyutu.",
+    "Görünüm ayarları sadece o cihazda geçerli."]},
+  {id:"2026-11-02-fill", date:"2 Kasım 2026", title:"Boşluk Doldurma", items:[
+    "Kavramı yazarak ya da seçerek tamamlama.",
+    "İpucu: önce kısa açıklama ya da Türkçesi, sonra harfler.",
+    "Küçük yazım hataları doğru sayılıyor."]},
+  {id:"2026-11-01-exe", date:"1 Kasım 2026", title:"Masaüstü uygulaması", items:[
+    "Windows için tek dosyalık .exe; ilerleme bilgisayara kaydediliyor."]},
+  {id:"2026-11-01-save", date:"1 Kasım 2026", title:"Otomatik kayıt ve Ayarlar", items:[
+    "Her hareket otomatik kaydediliyor; yarım kalan test kaldığı yerden sürüyor.",
+    "Ayarlar’da istatistikler, “İstatistikleri sıfırla” ve “Her şeyi sıfırla”."]},
+  {id:"2026-11-01-first", date:"1 Kasım 2026", title:"İlk sürüm", items:[
+    "İngilizce Kavramlar: 250 kavram; Anlatım, Test, Yanlışlarım ve Sözlük."]}
+];
+// Notes this device has not seen yet get a "Yeni" badge; the first visit ever shows none.
+const NOTES_KEY = "simge-notes-seen";
+const FRESH_NOTES = (() => {
+  let seen = null;
+  try { seen = localStorage.getItem(NOTES_KEY); localStorage.setItem(NOTES_KEY, RELEASES[0].id); } catch(e) {}
+  if (!seen) return [];
+  const at = RELEASES.findIndex(r => r.id === seen);
+  return RELEASES.slice(0, at < 0 ? RELEASES.length : at).map(r => r.id);
+})();
+let notesOpen = false;
+function renderNotes(){
+  const list = notesOpen ? RELEASES : RELEASES.slice(0, 3);
+  $("#h-notes").innerHTML = '<div class="lbl">Güncelleme notları</div>' + list.map(r =>
+    '<div class="note"><div class="when">' + r.date + '</div><div class="what"><b>' + esc(r.title) + "</b>" +
+    (FRESH_NOTES.includes(r.id) ? '<span class="badge">Yeni</span>' : "") +
+    "<ul>" + r.items.map(i => "<li>" + esc(i) + "</li>").join("") + "</ul></div></div>").join("") +
+    '<button class="linkbtn" id="notes-more">' + (notesOpen ? "Daha az göster" : "Tüm notları göster (" + RELEASES.length + ")") + "</button>";
+  $("#notes-more").onclick = () => { notesOpen = !notesOpen; renderNotes(); };
+  const upd = $("#h-updated");
+  upd.hidden = !FRESH_NOTES.length;
+  if (FRESH_NOTES.length) {
+    upd.innerHTML = "<span>Uygulama güncellendi: <b>" + esc(RELEASES[0].title) + "</b>. Neler değiştiğini aşağıdaki notlarda görebilirsin.</span>" +
+      '<button class="btn sm" id="upd-see">Notları göster</button>';
+    $("#upd-see").onclick = () => $("#h-notes").scrollIntoView({behavior: "smooth", block: "start"});
+  }
+}
+
+// ---------- new-version notice ----------
+// Compares this copy's version.json with the one on the update site; shown on every page when a newer one is online.
+const UPDATE_SITE = "https://precioushell.github.io/simge-workshop/";
+let localVersion = null;
+async function checkVersion(){
+  try {
+    if (localVersion === null) {
+      const r = await fetch("version.json?t=" + Date.now(), {cache: "no-store"});
+      localVersion = r.ok ? String((await r.json()).version || "") : "";
+    }
+    if (!localVersion) return;
+    const rr = await fetch(UPDATE_SITE + "version.json?t=" + Date.now(), {cache: "no-store"});
+    if (!rr.ok) return;
+    const remote = String((await rr.json()).version || "");
+    if (remote > localVersion) showUpdateBar(remote);
+  } catch(e) {}
+}
+function showUpdateBar(remote){
+  const app = desktop || !!window.pywebview;
+  const bar = $("#update-bar");
+  bar.innerHTML = "<span><b>Yeni bir sürüm var.</b> Güncelleme gerekli: " +
+    (app ? "uygulamayı kapatıp yeniden aç, yeni sürüm açılırken otomatik yüklenecek." : "sayfayı yenileyince yeni sürüm açılır.") +
+    " İlerlemen korunur.</span>" + (app ? "" : '<button class="btn pri sm" id="upd-go">Şimdi güncelle</button>');
+  bar.hidden = false;
+  if (!app) $("#upd-go").onclick = () => { location.href = location.pathname + "?v=" + encodeURIComponent(remote); };
 }
 function renderSubject(){
   const seen = Object.keys(S.seen).length;
@@ -1406,6 +1512,8 @@ show("home");
 if (window.pywebview && window.pywebview.api) initDesktop();
 else window.addEventListener("pywebviewready", initDesktop);
 initCloud();
+setTimeout(checkVersion, 3000);
+setInterval(checkVersion, 30 * 60 * 1000);
 })();
 </script>
 
