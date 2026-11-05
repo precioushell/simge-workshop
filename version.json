@@ -1,11 +1,12 @@
 {
- "version": "20261103223133",
+ "version": "20261105174855",
  "files": [
   "index.html",
   "base.js",
   "notes-greek.js",
   "notes-roman.js",
   "notes-medieval.js",
-  "edu.js"
+  "edu.js",
+  "de.js"
  ]
 }
