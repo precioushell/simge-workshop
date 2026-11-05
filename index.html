@@ -465,12 +465,12 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
   </main>
 </div>
 
-<script src="base.js?v=20261105174855"></script>
-<script src="notes-greek.js?v=20261105174855"></script>
-<script src="notes-roman.js?v=20261105174855"></script>
-<script src="notes-medieval.js?v=20261105174855"></script>
-<script src="edu.js?v=20261105174855"></script>
-<script src="de.js?v=20261105174855"></script>
+<script src="base.js?v=20261105180606"></script>
+<script src="notes-greek.js?v=20261105180606"></script>
+<script src="notes-roman.js?v=20261105180606"></script>
+<script src="notes-medieval.js?v=20261105180606"></script>
+<script src="edu.js?v=20261105180606"></script>
+<script src="de.js?v=20261105180606"></script>
 <script>
 (function(){
 const trLower = s => s.toLocaleLowerCase("tr");
@@ -881,6 +881,9 @@ function renderHome(){
 
 // ---------- release notes (newest first; add each update at the top) ----------
 const RELEASES = [
+  {id:"2026-11-05-update", date:"5 Kasım 2026", title:"Daha sağlam otomatik güncelleme", items:[
+    "Bazı bilgisayarlarda güncellemenin sessizce başarısız olması giderildi.",
+    "Ayarlar’da uygulama sürümü ve son güncelleme denemesinin sonucu görünüyor."]},
   {id:"2026-11-05-almanca", date:"5 Kasım 2026", title:"Yeni ders: Almanca", items:[
     "Şehir, ev, doğa kelimeleri, fiiller, Akkusativ, Dativ, iyelik ve cümle dizilimi.",
     "Soru tipleri: artikel, çoğul, Türkçesinden ve tanımdan kelime bulma, boşluk doldurma, cümle dizilimi.",
@@ -946,12 +949,18 @@ function renderNotes(){
 // ---------- new-version notice ----------
 // Compares this copy's version.json with the one on the update site; shown on every page when a newer one is online.
 const UPDATE_SITE = "https://precioushell.github.io/simge-workshop/";
-let localVersion = null;
+let localVersion = null, updateInfo = null;
+const versionText = v => v && v.length >= 12 ? [v.slice(6, 8), v.slice(4, 6), v.slice(0, 4)].join(".") + " " + v.slice(8, 10) + ":" + v.slice(10, 12) : "";
 async function checkVersion(){
   try {
+    if (desktop && !updateInfo && window.pywebview.api.update_info) {
+      updateInfo = await window.pywebview.api.update_info();
+      if (current === "settings") renderSettings();
+    }
     if (localVersion === null) {
       const r = await fetch("version.json?t=" + Date.now(), {cache: "no-store"});
       localVersion = r.ok ? String((await r.json()).version || "") : "";
+      if (current === "settings") renderSettings();
     }
     if (!localVersion) return;
     const rr = await fetch(UPDATE_SITE + "version.json?t=" + Date.now(), {cache: "no-store"});
@@ -964,7 +973,7 @@ function showUpdateBar(remote){
   const app = desktop || !!window.pywebview;
   const bar = $("#update-bar");
   bar.innerHTML = "<span><b>Yeni bir sürüm var.</b> Güncelleme gerekli: " +
-    (app ? "uygulamayı kapatıp yeniden aç, yeni sürüm açılırken otomatik yüklenecek." : "sayfayı yenileyince yeni sürüm açılır.") +
+    (app ? (updateInfo && updateInfo.ok === false ? "otomatik indirilemedi. İnterneti kontrol edip uygulamayı yeniden aç; devam ederse Ayarlar’daki hatayı bildir." : "uygulamayı kapatıp yeniden aç, yeni sürüm açılırken otomatik yüklenecek.") : "sayfayı yenileyince yeni sürüm açılır.") +
     " İlerlemen korunur.</span>" + (app ? "" : '<button class="btn pri sm" id="upd-go">Şimdi güncelle</button>');
   bar.hidden = false;
   if (!app) $("#upd-go").onclick = () => { location.href = location.pathname + "?v=" + encodeURIComponent(remote); };
@@ -1544,7 +1553,11 @@ function renderSettings(){
     "</div>" +
 
     '<div class="panel"><h3>Kayıt</h3><p>' + where + "</p>" +
-      '<p>Durum: <b style="color:var(--ink)">' + SYNC_TEXT[syncState] + "</b>" + (R.updatedAt ? " · son kayıt " + fmtDate(R.updatedAt) : "") + "</p></div>" +
+      '<p>Durum: <b style="color:var(--ink)">' + SYNC_TEXT[syncState] + "</b>" + (R.updatedAt ? " · son kayıt " + fmtDate(R.updatedAt) : "") + "</p>" +
+      (localVersion ? '<p>Uygulama sürümü: <b style="color:var(--ink)">' + versionText(localVersion) + "</b></p>" : "") +
+      (updateInfo && updateInfo.ok === true ? "<p>Son güncelleme denemesi başarılı.</p>" : "") +
+      (updateInfo && updateInfo.ok === false ? '<p style="color:var(--bad)">Güncelleme indirilemedi: ' + esc(updateInfo.error) + "</p>" : "") +
+    "</div>" +
 
     '<div class="panel danger-zone"><h3>Sıfırla</h3>' +
       (doneMsg ? '<div class="done">' + doneMsg + "</div>" : "") +
