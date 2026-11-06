@@ -263,6 +263,10 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
 .confirm{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;background:var(--badbg);font-size:.92rem}
 .confirm span{flex:1;min-width:12rem}
 .done{color:var(--ok);font-size:.9rem;font-weight:500}
+.acc{max-width:440px}
+.acc-f{display:grid;gap:6px;font-size:.92rem;font-weight:500}
+.acc-err{color:var(--bad) !important}
+.acc-warn{padding:10px 12px;border-radius:10px;background:var(--badbg);color:var(--ink) !important}
 
 /* Almanca questions */
 .parts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
@@ -320,6 +324,7 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
     <div id="subjnav" class="subjnav"></div>
     <p class="soon">Yeni dersler eklendikçe burada görünecek.</p>
     <div class="side-foot">
+      <button class="nv" data-go="account" id="acc-btn" hidden>Giriş yap</button>
       <button class="nv" data-go="settings">Ayarlar</button>
       <span class="sync" id="sync" data-s="local">Bu cihaza kaydediliyor</span>
     </div>
@@ -337,6 +342,7 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
       <p>Soldan bir ders seç. Yaptığın her şey otomatik kaydedilir.</p>
     </div>
     <div class="resume" id="h-updated" hidden></div>
+    <div class="resume" id="h-login" hidden><span><b>Çözdüklerin kaybolmasın.</b> Giriş yaparsan bilgisayarda bıraktığın yerden telefonda devam edersin.</span><button class="btn pri sm" id="h-login-go">Giriş yap</button></div>
     <div class="banners" id="h-banners" hidden></div>
     <div class="lbl">Derslerin</div>
     <div class="subjects" id="h-subjects"></div>
@@ -462,15 +468,18 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
 
   <!-- SETTINGS -->
   <section id="v-settings" hidden></section>
+
+  <!-- ACCOUNT -->
+  <section id="v-account" hidden></section>
   </main>
 </div>
 
-<script src="base.js?v=20261105180606"></script>
-<script src="notes-greek.js?v=20261105180606"></script>
-<script src="notes-roman.js?v=20261105180606"></script>
-<script src="notes-medieval.js?v=20261105180606"></script>
-<script src="edu.js?v=20261105180606"></script>
-<script src="de.js?v=20261105180606"></script>
+<script src="base.js?v=20261106180308"></script>
+<script src="notes-greek.js?v=20261106180308"></script>
+<script src="notes-roman.js?v=20261106180308"></script>
+<script src="notes-medieval.js?v=20261106180308"></script>
+<script src="edu.js?v=20261106180308"></script>
+<script src="de.js?v=20261106180308"></script>
 <script>
 (function(){
 const trLower = s => s.toLocaleLowerCase("tr");
@@ -494,6 +503,18 @@ function addSubject(def){
   def.nav = def.nav || DEFAULT_NAV;
   def.tiles = def.tiles || DEFAULT_TILES;
   def.cards = def.C.filter(c => c.card !== false).length;
+  // Saved statistics use these keys, not positions in the list, so concepts can be added anywhere later.
+  const taken = {};
+  def.keys = def.C.map(c => {
+    let k = c.s + "|" + c.en;
+    while (taken[k]) k += "+";
+    taken[k] = 1;
+    return k;
+  });
+  def.idOf = taken;
+  def.keys.forEach((k, i) => { taken[k] = i; });
+  // Unfinished rounds store list positions, so they only carry over between identical lists.
+  def.sig = def.keys.length + ":" + def.keys.join("\n").split("").reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 7);
   def.NOPE = def.C.map(() => new Set());
   def.overlap.forEach(g => g.forEach(a => g.forEach(b => { if (a !== b) def.NOPE[a].add(b); })));
   SUBJECTS[def.id] = def;
@@ -605,14 +626,54 @@ const freshSub = id => ({
   fill:null, fa:0, fc:0, fmode:"type", fn:10
 });
 const STATS_KEYS = ["seen","wrong","cs","answered","correct","tests","history","learn","quiz","fill","fa","fc"];
+const KEYED = ["seen","wrong","cs"];
+const SESSIONS = ["learn","quiz","fill"];
+// Saved form: seen, wrong and cs are keyed by concept. On screen they use list positions.
+// Older saves used positions, which are still read as they are.
+// Keys this version does not know (a concept from a newer version) are kept in `extra` and saved back.
+function unpackSub(id, s){
+  const sub = SUBJECTS[id], extra = s.extra || {};
+  KEYED.forEach(k => {
+    const out = {}, unknown = Object.assign({}, extra[k]);
+    Object.keys(s[k] || {}).forEach(key => {
+      if (/^\d+$/.test(key)) { if (sub.C[key]) out[key] = s[k][key]; }
+      else if (sub.idOf[key] !== undefined) out[sub.idOf[key]] = s[k][key];
+      else unknown[key] = s[k][key];
+    });
+    s[k] = out; extra[k] = unknown;
+  });
+  s.extra = extra;
+  if (s.sig && s.sig !== sub.sig) SESSIONS.forEach(k => { s[k] = null; });
+  delete s.sig;
+}
+function packSub(id, s){
+  const sub = SUBJECTS[id], out = Object.assign({}, s, {sig: sub.sig});
+  delete out.extra;
+  KEYED.forEach(k => {
+    const o = Object.assign({}, s.extra && s.extra[k]);
+    Object.keys(s[k]).forEach(i => { if (sub.keys[i] !== undefined) o[sub.keys[i]] = s[k][i]; });
+    out[k] = o;
+  });
+  return out;
+}
+function packRoot(root, withSync){
+  const out = {v: 2, updatedAt: root.updatedAt || 0, subj: {}};
+  Object.assign(out.subj, root.others);
+  SUBJECT_IDS.forEach(id => { out.subj[id] = packSub(id, root.subj[id]); });
+  if (withSync && root.sync) out.sync = root.sync;
+  return JSON.parse(JSON.stringify(out));
+}
 function normalizeRoot(data){
   data = JSON.parse(JSON.stringify(data || {}));
   // Before subjects existed, progress was saved flat: it all belongs to İngilizce Kavramlar.
   if (!data.subj) data = {updatedAt: data.updatedAt || 0, subj: {en: data}};
   const root = {updatedAt: data.updatedAt || 0, subj: {}};
+  if (data.sync) root.sync = data.sync;
+  Object.keys(data.subj).forEach(id => { if (!SUBJECTS[id]) (root.others = root.others || {})[id] = data.subj[id]; });
   SUBJECT_IDS.forEach(id => {
     const s = Object.assign(freshSub(id), data.subj[id] || {});
     delete s.updatedAt;
+    unpackSub(id, s);
     if (!Array.isArray(s.secs) || !s.secs.length || s.secs.some(x => !SUBJECTS[id].secs[x])) s.secs = SUBJECTS[id].ids.slice();
     if (!s.types || !SUBJECTS[id].qtypes.some(t => s.types[t[0]])) s.types = allTypes(id);
     root.subj[id] = s;
@@ -625,39 +686,40 @@ function useSubject(id){
   SUB = SUBJECTS[id]; C = SUB.C; SECS = SUB.secs; SEC_IDS = SUB.ids; NOPE = SUB.NOPE;
   S = R.subj[id];
 }
-function adopt(data){ R = normalizeRoot(data); S = R.subj[SUB.id]; }
+function adopt(data){ const sync = R.sync; R = normalizeRoot(data); if (sync && !R.sync) R.sync = sync; S = R.subj[SUB.id]; }
 useSubject("en");
 
 let cloud = null, cloudBusy = false, cloudAgain = false, cloudTimer = null;
 let desktop = false, fileTimer = null, fileChain = Promise.resolve();
-function writeLocal(){ try { localStorage.setItem(KEY, JSON.stringify(R)); } catch(e) {} }
+function writeLocal(){ try { localStorage.setItem(KEY, JSON.stringify(packRoot(R, true))); } catch(e) {} }
 function save(){
   R.updatedAt = Date.now();
   writeLocal();
   if (cloud) { setSync("saving"); clearTimeout(cloudTimer); cloudTimer = setTimeout(pushCloud, 1200); }
   if (desktop) { setSync("saving"); clearTimeout(fileTimer); fileTimer = setTimeout(pushFile, 400); }
+  if (acct) queueAccountSync();
 }
 // Desktop app (.exe): the launcher exposes load/save to a progress file on the computer.
 function pushFile(){
-  const body = JSON.stringify(R);
+  const body = JSON.stringify(packRoot(R, true));
   fileChain = fileChain.then(() => window.pywebview.api.save(body))
     .then(() => setSync("file"), () => setSync("local"));
 }
 function initDesktop(){
-  if (desktop || !window.pywebview || !window.pywebview.api) return;
+  if (desktop || !window.pywebview || !window.pywebview.api || !window.pywebview.api.load) return;
   desktop = true;
   window.pywebview.api.load().then(txt => {
     const d = txt ? JSON.parse(txt) : null;
     if (d && (d.updatedAt || 0) > (R.updatedAt || 0)) { adopt(d); writeLocal(); rerender(); }
     else if (R.updatedAt) pushFile();
     setSync("file");
-  }).catch(() => { desktop = false; setSync("local"); });
+  }).catch(() => { desktop = false; setSync("local"); }).then(startAccount);
 }
 async function pushCloud(retried){
   if (!cloud) return;
   if (cloudBusy) { cloudAgain = true; return; }
   cloudBusy = true;
-  try { await cloud.set(JSON.parse(JSON.stringify(R))); setSync("cloud"); }
+  try { await cloud.set(packRoot(R)); setSync("cloud"); }
   catch(e) {
     if (e && e.code === "unavailable" && !retried) { cloudBusy = false; setTimeout(() => pushCloud(true), 1500 + Math.random() * 2000); return; }
     if (e && e.code === "quota_exceeded") setSync("full");
@@ -672,10 +734,20 @@ const SYNC_TEXT = {
   saving:"Kaydediliyor…",
   cloud:"Hesabına kaydedildi",
   file:"Bilgisayara kaydedildi",
-  full:"Hesap alanı dolu, bu cihaza kaydediliyor"
+  full:"Hesap alanı dolu, bu cihaza kaydediliyor",
+  offline:"İnternet yok, bağlanınca hesabına gönderilecek",
+  syncfail:"Hesaba kaydedilemedi, yeniden denenecek",
+  relogin:"Oturum kapandı, yeniden giriş yap"
 };
 let syncState = "local";
-function setSync(s){ syncState = s; const el = $("#sync"); el.dataset.s = s; el.textContent = SYNC_TEXT[s]; if (current === "settings") renderSettings(); }
+function setSync(s){
+  if (acct && (s === "file" || s === "local")) s = acctState;
+  syncState = s; const el = $("#sync"); el.dataset.s = s; el.textContent = SYNC_TEXT[s];
+  const btn = $("#acc-btn");
+  if (btn) { btn.hidden = !ACCOUNTS_ON; btn.textContent = acct ? acct.name : "Giriş yap"; }
+  if (current === "settings") renderSettings();
+  if (current === "account" && acct) renderAccount();
+}
 async function initCloud(){
   if (!window.claude || typeof window.claude.use !== "function") return;
   setSync("wait");
@@ -696,6 +768,280 @@ async function initCloud(){
     } else if (R.updatedAt && (!remote || R.updatedAt > (remote.updatedAt || 0))) { await pushCloud(); }
     else setSync("cloud");
   } catch(e) { cloud = null; setSync("local"); }
+}
+
+// ---------- account: username and password, progress kept in Firebase ----------
+// Only the desktop app and the GitHub page use this. The password goes straight to Firebase and is never stored here.
+// Firebase needs an e-mail address, so the username becomes one that is never shown and never receives mail.
+// Each person's record is users/<uid>; the database rules let only that person read or write it.
+const FB = {key:"AIzaSyAIByJ040Ckwd1UCcorp3vtJQGLOrX9JCM", project:"simge-workshop", mail:"@simge-workshop.firebaseapp.com"};
+const AUTH_KEY = "simge-auth-v1", BACKUP_KEY = "simge-backup-v1";
+const ACCOUNTS_ON = !window.claude;
+const ACC_ERRORS = {
+  EMAIL_EXISTS:"Bu kullanıcı adı alınmış, başka bir ad dene.",
+  INVALID_LOGIN_CREDENTIALS:"Kullanıcı adı ya da şifre yanlış.",
+  EMAIL_NOT_FOUND:"Kullanıcı adı ya da şifre yanlış.",
+  INVALID_PASSWORD:"Kullanıcı adı ya da şifre yanlış.",
+  WEAK_PASSWORD:"Şifre en az 6 karakter olmalı.",
+  INVALID_EMAIL:"Bu kullanıcı adı kullanılamıyor, başka bir ad dene.",
+  TOO_MANY_ATTEMPTS_TRY_LATER:"Çok fazla deneme yapıldı. Biraz bekleyip yeniden dene.",
+  OPERATION_NOT_ALLOWED:"Hesap sistemi şu an kapalı.",
+  USER_DISABLED:"Bu hesap kapatılmış."
+};
+let acct = null, acctState = "cloud", acctToken = null, acctTokenUntil = 0;
+let acctBusy = false, acctAgain = false, acctTimer = null, acctError = "", acctMode = "in", acctLast = "";
+try { acct = JSON.parse(localStorage.getItem(AUTH_KEY) || "null"); } catch(e) {}
+if (!ACCOUNTS_ON) acct = null;
+
+const foldName = s => s.trim().toLocaleLowerCase("tr").replace(/[ıİ]/g, "i").replace(/ş/g, "s").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ö/g, "o").replace(/ç/g, "c");
+const nameOk = n => /^[a-z0-9]([a-z0-9._-]{1,22})[a-z0-9]$/.test(n);
+function offlineError(){ const e = new Error("offline"); e.offline = true; return e; }
+async function callJson(url, opts){
+  let r;
+  try { r = await fetch(url, opts); } catch(e) { throw offlineError(); }
+  let body = null;
+  try { body = await r.json(); } catch(e) {}
+  return {status: r.status, ok: r.ok, body: body || {}};
+}
+const authUrl = what => "https://identitytoolkit.googleapis.com/v1/accounts:" + what + "?key=" + FB.key;
+const docUrl = uid => "https://firestore.googleapis.com/v1/projects/" + FB.project + "/databases/(default)/documents/users/" + uid;
+function storeAuth(){ try { if (acct) localStorage.setItem(AUTH_KEY, JSON.stringify(acct)); else localStorage.removeItem(AUTH_KEY); } catch(e) {} }
+
+async function signInOrUp(name, password, create){
+  const r = await callJson(authUrl(create ? "signUp" : "signInWithPassword"), {method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({email: name + FB.mail, password: password, returnSecureToken: true})});
+  if (!r.ok) {
+    const code = String((r.body.error && r.body.error.message) || "").split(" ")[0];
+    throw new Error(ACC_ERRORS[code] || "Giriş yapılamadı (" + (code || r.status) + ").");
+  }
+  acct = {uid: r.body.localId, name: name, refresh: r.body.refreshToken};
+  acctToken = r.body.idToken;
+  acctTokenUntil = Date.now() + (+r.body.expiresIn || 3600) * 900;
+  storeAuth();
+}
+// The sign-in token lasts an hour; the stored refresh token renews it without asking for the password.
+async function idToken(){
+  if (acctToken && Date.now() < acctTokenUntil) return acctToken;
+  const r = await callJson("https://securetoken.googleapis.com/v1/token?key=" + FB.key, {method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body: "grant_type=refresh_token&refresh_token=" + encodeURIComponent(acct.refresh)});
+  if (!r.ok) throw new Error(r.status >= 400 && r.status < 500 ? "relogin" : "token " + r.status);
+  acctToken = r.body.id_token;
+  acctTokenUntil = Date.now() + (+r.body.expires_in || 3600) * 900;
+  if (r.body.refresh_token && r.body.refresh_token !== acct.refresh) { acct.refresh = r.body.refresh_token; storeAuth(); }
+  return acctToken;
+}
+async function readDoc(){
+  const r = await callJson(docUrl(acct.uid), {headers:{Authorization:"Bearer " + await idToken()}, cache:"no-store"});
+  if (r.status === 404) return null;
+  if (r.status === 401) { acctToken = null; throw new Error("token401"); }
+  if (!r.ok) throw new Error("okuma " + r.status + " " + ((r.body.error && r.body.error.status) || ""));
+  return {time: r.body.updateTime, data: JSON.parse(r.body.fields.data.stringValue)};
+}
+// Writes only if nobody changed the record since it was read; otherwise false, and the caller merges again.
+async function writeDoc(root, time){
+  const body = JSON.stringify({fields:{data:{stringValue: JSON.stringify(root)}, updatedAt:{integerValue: String(root.updatedAt || 0)}}});
+  if (body.length > 900000) throw new Error("kayıt çok büyük");
+  const cond = time ? "currentDocument.updateTime=" + encodeURIComponent(time) : "currentDocument.exists=false";
+  const r = await callJson(docUrl(acct.uid) + "?" + cond, {method:"PATCH", headers:{Authorization:"Bearer " + await idToken(), "Content-Type":"application/json"}, body});
+  const why = (r.body.error && r.body.error.status) || "";
+  if (r.status === 409 || why === "FAILED_PRECONDITION") return false;
+  if (r.status === 401) { acctToken = null; throw new Error("token401"); }
+  if (!r.ok) throw new Error("yazma " + r.status + " " + why);
+  return true;
+}
+
+// Three-way merge. base is the state at the last sync; each side's changes since then are combined,
+// so answers given on two devices add up, and a reset on one device also holds on the other.
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const pick3 = (l, r, b, localNewer) => same(l, b) ? r : same(r, b) ? l : localNewer ? l : r;
+const add3 = (l, r, b) => Math.max(0, (r || 0) + (l || 0) - (b || 0));
+function mergeKeyed(l, r, b, both){
+  const out = {};
+  Object.keys(Object.assign({}, l, r, b)).forEach(k => {
+    const v = same(l[k], b[k]) ? r[k] : same(r[k], b[k]) ? l[k] : both(l[k], r[k], b[k]);
+    if (v !== undefined) out[k] = v;
+  });
+  return out;
+}
+function mergeSub(l, r, b, localNewer){
+  const out = {};
+  Object.keys(Object.assign({}, l, r)).forEach(k => {
+    if (["answered","correct","tests","fa","fc"].includes(k)) out[k] = add3(l[k], r[k], b[k]);
+    else if (k === "cs") {
+      out.cs = {};
+      Object.keys(Object.assign({}, l.cs, r.cs, b.cs)).forEach(c => {
+        const x = l.cs[c] || [0, 0], y = r.cs[c] || [0, 0], z = b.cs[c] || [0, 0];
+        const v = [add3(x[0], y[0], z[0]), add3(x[1], y[1], z[1])];
+        if (v[0] || v[1]) out.cs[c] = v;
+      });
+    }
+    else if (k === "seen") out.seen = mergeKeyed(l.seen, r.seen, b.seen, (x, y) => x || y);
+    else if (k === "wrong") out.wrong = mergeKeyed(l.wrong, r.wrong, b.wrong, (x, y) => x && y ? Math.max(x, y) : x || y);
+    else if (k === "history") {
+      if (same(l.history, b.history)) out.history = r.history;
+      else if (same(r.history, b.history)) out.history = l.history;
+      else {
+        const seen = {};
+        out.history = l.history.concat(r.history).filter(h => { const id = h.at + "/" + h.right + "/" + h.total; if (seen[id]) return false; seen[id] = 1; return true; })
+          .sort((x, y) => y.at - x.at).slice(0, 30);
+      }
+    }
+    else out[k] = pick3(l[k], r[k], b[k], localNewer);
+  });
+  KEYED.forEach(k => {
+    const sorted = {};
+    Object.keys(out[k] || {}).sort().forEach(key => { sorted[key] = out[k][key]; });
+    out[k] = sorted;
+  });
+  return out;
+}
+function mergeRoots(l, r, b){
+  const out = {v: 2, updatedAt: Math.max(l.updatedAt || 0, r.updatedAt || 0), subj: {}};
+  const localNewer = (l.updatedAt || 0) >= (r.updatedAt || 0);
+  Object.keys(Object.assign({}, l.subj, r.subj)).forEach(id => {
+    const blank = SUBJECTS[id] ? packSub(id, freshSub(id)) : {seen:{}, wrong:{}, cs:{}, history:[]};
+    out.subj[id] = mergeSub(l.subj[id] || blank, r.subj[id] || blank, (b && b.subj[id]) || blank, localNewer);
+  });
+  return out;
+}
+const EMPTY_BASE = () => packRoot(normalizeRoot({}));
+// Puts merged data on screen, replacing only what changed so a question in progress is not disturbed.
+function applyPacked(p){
+  const n = normalizeRoot(p);
+  let changed = false;
+  SUBJECT_IDS.forEach(id => {
+    const cur = R.subj[id], nw = n.subj[id];
+    Object.keys(nw).forEach(k => { if (!same(cur[k], nw[k])) { cur[k] = nw[k]; changed = true; } });
+  });
+  R.others = n.others;
+  R.updatedAt = Math.max(R.updatedAt || 0, n.updatedAt || 0);
+  return changed;
+}
+function acctStatus(s){ acctState = s; setSync(s); }
+async function syncAccount(){
+  if (!acct || !R.sync) return false;
+  if (acctBusy) { acctAgain = true; return false; }
+  acctBusy = true;
+  clearTimeout(acctTimer);
+  let ok = false;
+  try {
+    for (let attempt = 0; attempt < 4 && !ok; attempt++) {
+      const sent = packRoot(R), base = R.sync.base;
+      let doc, stored;
+      try {
+        doc = await readDoc();
+        const merged = doc ? mergeRoots(sent, doc.data, base) : sent;
+        stored = (doc && same(merged, doc.data)) || await writeDoc(merged, doc && doc.time) ? merged : null;
+      } catch(e) {
+        if (e.message === "token401" && attempt < 3) continue;
+        throw e;
+      }
+      if (stored) {
+        // Answers given while this was running are kept: they count as changes on top of what was sent.
+        const changed = applyPacked(mergeRoots(packRoot(R), stored, sent));
+        R.sync.base = stored;
+        writeLocal();
+        if (desktop) pushFile();
+        if (changed) rerender();
+        ok = true;
+      }
+    }
+    if (!ok) throw new Error("kayit cakismasi");
+    acctLast = "";
+    acctStatus("cloud");
+  } catch(e) {
+    acctLast = e.offline ? "" : e.message;
+    acctStatus(e.offline ? "offline" : e.message === "relogin" ? "relogin" : "syncfail");
+    clearTimeout(acctTimer);
+    acctTimer = setTimeout(syncAccount, 60000);
+  }
+  acctBusy = false;
+  if (acctAgain) { acctAgain = false; queueAccountSync(); }
+  return ok;
+}
+function queueAccountSync(){
+  acctState = "saving"; setSync("saving");
+  clearTimeout(acctTimer);
+  acctTimer = setTimeout(syncAccount, 3000);
+}
+// Links this device to the signed-in account: its progress so far joins the account's.
+function attachDevice(){
+  if (R.sync && R.sync.uid === acct.uid) return;
+  try { localStorage.setItem(BACKUP_KEY, JSON.stringify(packRoot(R))); } catch(e) {}
+  if (R.sync) { R = normalizeRoot({}); S = R.subj[SUB.id]; }
+  R.sync = {uid: acct.uid, base: EMPTY_BASE()};
+}
+let accountStarted = false;
+function startAccount(){
+  if (accountStarted) return;
+  accountStarted = true;
+  if (!acct) return;
+  attachDevice();
+  acctState = "saving"; setSync("saving");
+  syncAccount();
+}
+async function signOut(){
+  acctError = "";
+  while (acctBusy) await new Promise(r => setTimeout(r, 150));
+  if (!await syncAccount()) { acctError = "Çıkış için internet gerekiyor: son çözdüklerin önce hesabına kaydedilmeli."; renderAccount(); return; }
+  clearTimeout(acctTimer);
+  acct = null; acctToken = null; acctTokenUntil = 0; storeAuth();
+  R = normalizeRoot({}); S = R.subj[SUB.id];
+  R.updatedAt = Date.now();
+  writeLocal();
+  if (desktop) pushFile();
+  setSync(desktop ? "file" : "local");
+  show("home");
+}
+function renderAccount(){
+  const box = $("#v-account");
+  if (acct) {
+    box.innerHTML = '<h2 class="vt">Hesabım</h2><p class="vd">Çözdüğün her şey hesabına kaydediliyor. Aynı kullanıcı adıyla başka bir cihazdan girince kaldığın yerden devam edersin.</p>' +
+      '<div class="panel acc"><p>Giriş yapılan hesap: <b style="color:var(--ink)">' + esc(acct.name) + "</b></p>" +
+      '<p>Durum: <b style="color:var(--ink)">' + SYNC_TEXT[syncState] + "</b></p>" +
+      (acctError ? '<p class="acc-err" role="alert">' + esc(acctError) + "</p>" : "") +
+      (acctLast && syncState === "syncfail" ? "<p>Hata: " + esc(acctLast) + "</p>" : "") +
+      (syncState === "relogin" ? "<p>Şifreni yeniden girmen gerekiyor. Bu cihazdaki ilerleme silinmez, girince hesabına eklenir.</p>" : "") +
+      '<div class="actions">' + (syncState === "relogin" ? '<button class="btn pri" id="a-again">Yeniden giriş yap</button>' : '<button class="btn pri" id="a-sync">Şimdi kaydet</button><button class="btn" id="a-out">Çıkış yap</button>') + "</div></div>";
+    if ($("#a-again")) $("#a-again").onclick = () => { const n = acct.name; acctToken = null; acct = null; storeAuth(); accountStarted = true; setSync(desktop ? "file" : "local"); renderAccount(); $("#a-name").value = n; };
+    if ($("#a-sync")) $("#a-sync").onclick = async () => { acctError = ""; await syncAccount(); renderAccount(); };
+    if ($("#a-out")) $("#a-out").onclick = signOut;
+    return;
+  }
+  const create = acctMode === "up";
+  box.innerHTML = '<h2 class="vt">' + (create ? "Hesap oluştur" : "Giriş yap") + '</h2><p class="vd">Hesabınla giriş yapınca çözdüklerin kaybolmaz; bilgisayarda bıraktığın yerden telefonda devam edersin.</p>' +
+    '<form class="panel acc" id="a-form" novalidate>' +
+      '<label class="acc-f"><span>Kullanıcı adı</span><input class="search" id="a-name" type="text" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="24"></label>' +
+      '<label class="acc-f"><span>Şifre</span><input class="search" id="a-pass" type="password" autocomplete="' + (create ? "new-password" : "current-password") + '"></label>' +
+      (create ? '<label class="acc-f"><span>Şifre (tekrar)</span><input class="search" id="a-pass2" type="password" autocomplete="new-password"></label>' +
+        "<p>Kullanıcı adında harf, rakam, nokta, tire ve alt çizgi olabilir. Büyük-küçük harf ve Türkçe harfler fark etmez: Şule ile sule aynı addır.</p>" +
+        '<p class="acc-warn"><b>Şifreni bir yere not et.</b> Şifre unutulursa sıfırlanamaz ve hesaba bir daha girilemez.</p>' : "") +
+      (acctError ? '<p class="acc-err" role="alert">' + esc(acctError) + "</p>" : "") +
+      '<div class="actions"><button class="btn pri" id="a-go" type="submit">' + (create ? "Hesap oluştur" : "Giriş yap") + "</button>" +
+      '<button class="linkbtn" id="a-switch" type="button">' + (create ? "Hesabım var, giriş yapacağım" : "Hesabım yok, yeni oluşturacağım") + "</button></div>" +
+    "</form>";
+  $("#a-switch").onclick = () => { const n = $("#a-name").value; acctMode = create ? "in" : "up"; acctError = ""; renderAccount(); $("#a-name").value = n; };
+  $("#a-form").onsubmit = async e => {
+    e.preventDefault();
+    const name = foldName($("#a-name").value), pass = $("#a-pass").value;
+    const fail = m => { acctError = m; const typed = $("#a-name").value; renderAccount(); $("#a-name").value = typed; };
+    if (!nameOk(name)) return fail("Kullanıcı adı 3-24 karakter olmalı; harf, rakam, nokta, tire ya da alt çizgi kullanılabilir.");
+    if (pass.length < 6) return fail("Şifre en az 6 karakter olmalı.");
+    if (create && pass !== $("#a-pass2").value) return fail("İki şifre aynı değil.");
+    $("#a-go").disabled = true;
+    acctError = "";
+    try {
+      await signInOrUp(name, pass, create);
+      acctMode = "in";
+      attachDevice();
+      accountStarted = true;
+      acctState = "saving"; setSync("saving");
+      show("account");
+      await syncAccount();
+      if (current === "account") renderAccount();
+    } catch(err) { fail(err.offline ? "İnternet bağlantısı yok. Bağlanıp yeniden dene." : err.message); }
+  };
 }
 
 // ---------- appearance: kept only on this device (never synced to the account or other computers) ----------
@@ -783,7 +1129,7 @@ const cardIds = () => inSecs().filter(id => C[id].card !== false);
 const fmtDate = t => new Date(t).toLocaleString("tr-TR", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"});
 
 // ---------- views ----------
-const VIEWS = ["home","subject","learn","quiz","run","fill","frun","result","wrong","gloss","settings"];
+const VIEWS = ["home","subject","learn","quiz","run","fill","frun","result","wrong","gloss","settings","account"];
 // Views that belong to the current subject, with their name in the breadcrumb.
 const IN_SUBJECT = {subject:"", learn:"Anlatım", quiz:"Test", run:"Test", fill:"Boşluk Doldurma", frun:"Boşluk Doldurma", result:"Sonuç", wrong:"Yanlışlarım", gloss:"Sözlük"};
 const NAV_OF = {run:"quiz", frun:"fill", result:null};
@@ -800,6 +1146,7 @@ function show(v, opts){
   if (v === "wrong") renderWrong();
   if (v === "gloss") { $("#g-q").value = S.gq || ""; $("#g-q").placeholder = SUB.search; renderGloss(); }
   if (v === "settings") renderSettings();
+  if (v === "account") { acctError = ""; renderAccount(); }
   renderChips();
   window.scrollTo(0, 0);
 }
@@ -821,6 +1168,7 @@ function renderNav(){
   if (inSubj) parts.push(current === "subject" ? '<span aria-current="page">' + esc(SUB.name) + "</span>" : '<button data-crumb="subject">' + esc(SUB.name) + "</button>");
   if (inSubj && IN_SUBJECT[current]) parts.push('<span aria-current="page">' + IN_SUBJECT[current] + "</span>");
   if (current === "settings") parts.push('<span aria-current="page">Ayarlar</span>');
+  if (current === "account") parts.push('<span aria-current="page">Hesabım</span>');
   $("#crumbs").innerHTML = current === "home" ? "" : parts.join("<span>›</span>");
   $("#crumbs").querySelectorAll("[data-crumb]").forEach(b => b.onclick = () => show(b.dataset.crumb));
 }
@@ -875,12 +1223,18 @@ function renderHome(){
     "<span>Çözülen soru: <b>" + answered + "</b></span>" +
     "<span>Biten test ve tur: <b>" + tests + "</b></span>" +
     (last ? "<span>Son çalışma: <b>" + fmtDate(last) + "</b></span>" : "");
+  $("#h-login").hidden = !ACCOUNTS_ON || !!acct;
+  $("#h-login-go").onclick = () => show("account");
   banners($("#h-banners"), SUBJECT_IDS);
   renderNotes();
 }
 
 // ---------- release notes (newest first; add each update at the top) ----------
 const RELEASES = [
+  {id:"2026-11-06-account", date:"6 Kasım 2026", title:"Hesap: kullanıcı adı ve şifreyle giriş", items:[
+    "Giriş yapınca çözdüklerin hesabına kaydedilir; bilgisayarda bıraktığın yerden telefonda devam edersin.",
+    "İlk girişte o cihazdaki ilerleme hesaba eklenir. Giriş yapmadan kullanmaya da devam edebilirsin.",
+    "Görünüm ayarları yine sadece o cihazda geçerli."]},
   {id:"2026-11-05-update", date:"5 Kasım 2026", title:"Daha sağlam otomatik güncelleme", items:[
     "Bazı bilgisayarlarda güncellemenin sessizce başarısız olması giderildi.",
     "Ayarlar’da uygulama sürümü ve son güncelleme denemesinin sonucu görünüyor."]},
@@ -1502,7 +1856,9 @@ function statsPanel(id){
   "</div>";
 }
 function renderSettings(){
-  const where = desktop
+  const where = acct
+    ? "Her hareketin bu cihaza ve " + esc(acct.name) + " hesabına kaydediliyor. Aynı hesapla başka bir cihazdan girince kaldığın yerden devam edersin."
+    : desktop
     ? "Her hareketin bu bilgisayarda, kullanıcı klasöründeki SimgeWorkshop klasörüne anında kaydediliyor. Uygulamayı kapatıp açınca ilerlemen yerinde durur."
     : syncState === "cloud" || syncState === "saving"
     ? "Her hareketin hem bu tarayıcıya hem de hesabındaki sana özel alana anında kaydediliyor. Başka bir cihazdan girdiğinde kaldığın yerden devam edersin."
@@ -1511,7 +1867,7 @@ function renderSettings(){
     '<div class="confirm"><span>' + (what === "stats"
       ? "Çözülen sorular, doğruluk, test ve boşluk doldurma geçmişi, görülen kartlar ve Yanlışlarım listesi silinecek. Ayarların kalır."
       : "Her şey ilk günkü haline döner: bütün istatistikler, Yanlışlarım listesi, yarım kalan turlar, bütün ayarlar ve bu cihazdaki görünüm.") +
-    ' Bu geri alınamaz.</span><button class="btn danger solid sm" data-yes="' + what + '">Evet, sıfırla</button><button class="btn sm" data-no>Vazgeç</button></div>';
+    (acct ? " Hesabındaki kayıt da sıfırlanır." : "") + ' Bu geri alınamaz.</span><button class="btn danger solid sm" data-yes="' + what + '">Evet, sıfırla</button><button class="btn sm" data-no>Vazgeç</button></div>';
   FONTS_D.concat(FONTS_B).forEach(f => ensureFont(f[0]));
   const swatch = (key, name, bg, surf, ink, line, dot) =>
     '<button class="sw" data-theme-v="' + key + '" aria-pressed="' + (LOOK.theme === key) + '">' +
@@ -1585,7 +1941,9 @@ function renderSettings(){
       SUBJECT_IDS.forEach(id => { const blank = freshSub(id); STATS_KEYS.forEach(k => { R.subj[id][k] = blank[k]; }); });
       doneMsg = "İstatistikler sıfırlandı.";
     } else {
+      const sync = R.sync;
       R = normalizeRoot({}); S = R.subj[SUB.id];
+      if (sync) R.sync = sync;
       LOOK = freshLook(); saveLook(); applyLook();
       doneMsg = "Her şey sıfırlandı.";
     }
@@ -1616,9 +1974,19 @@ document.addEventListener("keydown", e => {
 
 applyLook();
 show("home");
-if (window.pywebview && window.pywebview.api) initDesktop();
-else window.addEventListener("pywebviewready", initDesktop);
+window.addEventListener("pywebviewready", initDesktop);
+initDesktop();
 initCloud();
+if (ACCOUNTS_ON) {
+  setSync(syncState);
+  // The desktop app starts this once the progress file has been read.
+  if (location.port !== "48217") startAccount();
+  else setTimeout(startAccount, 5000);
+  window.addEventListener("online", () => { if (acct) syncAccount(); });
+  // Picks up what was solved on another device whenever this one comes back to the front.
+  document.addEventListener("visibilitychange", () => { if (acct) syncAccount(); });
+  setInterval(() => { if (acct && !document.hidden) syncAccount(); }, 5 * 60 * 1000);
+}
 setTimeout(checkVersion, 3000);
 setInterval(checkVersion, 30 * 60 * 1000);
 })();
