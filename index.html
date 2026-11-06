@@ -474,12 +474,12 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
   </main>
 </div>
 
-<script src="base.js?v=20261106180308"></script>
-<script src="notes-greek.js?v=20261106180308"></script>
-<script src="notes-roman.js?v=20261106180308"></script>
-<script src="notes-medieval.js?v=20261106180308"></script>
-<script src="edu.js?v=20261106180308"></script>
-<script src="de.js?v=20261106180308"></script>
+<script src="base.js?v=20261106192741"></script>
+<script src="notes-greek.js?v=20261106192741"></script>
+<script src="notes-roman.js?v=20261106192741"></script>
+<script src="notes-medieval.js?v=20261106192741"></script>
+<script src="edu.js?v=20261106192741"></script>
+<script src="de.js?v=20261106192741"></script>
 <script>
 (function(){
 const trLower = s => s.toLocaleLowerCase("tr");
@@ -1231,6 +1231,11 @@ function renderHome(){
 
 // ---------- release notes (newest first; add each update at the top) ----------
 const RELEASES = [
+  {id:"2026-11-06-fill", date:"6 Kasım 2026", title:"Boşluk doldurmada daha adil kontrol", items:[
+    "Kelime sırası önemli değil: “will and fate” de doğru sayılıyor.",
+    "Genel kelimeyi yazmasan da olur: “lyric poetry” yerine “lyric” doğru sayılıyor.",
+    "Doğru sayılan cevaplarda kavramın tam yazılışı gösteriliyor.",
+    "Başka bir kavramın adını yazınca artık yanlışlıkla doğru sayılmıyor (örneğin Anal dönem yerine Oral dönem)."]},
   {id:"2026-11-06-account", date:"6 Kasım 2026", title:"Hesap: kullanıcı adı ve şifreyle giriş", items:[
     "Giriş yapınca çözdüklerin hesabına kaydedilir; bilgisayarda bıraktığın yerden telefonda devam edersin.",
     "İlk girişte o cihazdaki ilerleme hesaba eklenir. Giriş yapmadan kullanmaya da devam edebilirsin.",
@@ -1679,6 +1684,14 @@ function lev(a, b){
   }
   return d[b.length];
 }
+// Connecting words never matter, and word order is free ("will and fate" for "fate and will").
+const LINK_WORDS = new Set(["and","or","vs","the","of","a","an","in","ve","ile"]);
+// Generic words a person may leave out ("lyric" for "lyric poetry").
+const OPTIONAL_WORDS = new Set(["free","poetry","poem","verse","play","period","literature","narrative","philosophy","culture"]);
+function wordBag(s, loose){
+  return akey(s).split(" ").map(w => w.length > 3 ? w.replace(/s$/, "") : w)
+    .filter(w => !LINK_WORDS.has(w) && !(loose && OPTIONAL_WORDS.has(w))).sort().join(" ");
+}
 function judge(c, surf, val){
   const v = akey(val);
   if (!v) return false;
@@ -1686,7 +1699,13 @@ function judge(c, surf, val){
   // Turkish terms: also accept the answer without a generic last word ("örgün" for "örgün eğitim", "oral" for "oral dönem").
   targets.slice().forEach(t => { const u = t.replace(/ (egitim|egitimi|donem|donemi|evre|evresi|ilke|ilkesi|kuram|kurami|duzey|duzeyi|hareketi|teskilati|mektebi|kulliyesi|medresesi|gelisim)$/, ""); if (u && u !== t) targets.push(u); });
   if (targets.includes(v)) return "exact";
-  return targets.some(t => lev(v, t) <= (t.length >= 9 ? 2 : t.length >= 5 ? 1 : 0)) ? "close" : false;
+  const near = (a, b) => lev(a, b) <= (b.length >= 9 ? 2 : b.length >= 5 ? 1 : 0);
+  // Another concept's own name is never a typo or a shorter form of this one ("Oral dönem" for "Anal dönem").
+  const bag = wordBag(val), loose = wordBag(val, true);
+  if (C.some(d => d.en !== c.en && alts(d).some(a => wordBag(a) === bag))) return false;
+  if (targets.some(t => near(v, t))) return "close";
+  if (targets.some(t => near(bag, wordBag(t)))) return "close";
+  return loose && targets.some(t => near(loose, wordBag(t, true))) ? "close" : false;
 }
 const conceptNamed = val => C.find(d => alts(d).some(a => akey(a) === akey(val)));
 
@@ -1760,7 +1779,7 @@ function drawF(){
     const mine = f.chosen !== undefined && f.chosen !== null ? C[f.chosen] : (f.typed ? conceptNamed(f.typed) : null);
     const name = esc(c.en) + (c.tr ? " (" + esc(c.tr) + ")" : "");
     $("#f-fb").innerHTML = f.ok
-      ? '<div class="fb ok"><div class="head">Doğru! ' + (f.close ? "Küçük bir yazım farkı var; doğrusu <b>" + esc(z.surf) + "</b>." : "Bu " + name + ".") + "</div><p>" + esc(c.k) + '</p><p class="tip"><b>Akılda kalsın:</b> ' + esc(c.h) + "</p></div>"
+      ? '<div class="fb ok"><div class="head">Doğru! ' + (f.close ? "Tam yazılışı: <b>" + esc(z.surf) + "</b>." : "Bu " + name + ".") + "</div><p>" + esc(c.k) + '</p><p class="tip"><b>Akılda kalsın:</b> ' + esc(c.h) + "</p></div>"
       : '<div class="fb no"><div class="head">Doğru cevap: ' + name + "</div><p>" + esc(c.k) + '</p><p class="tip"><b>Akılda kalsın:</b> ' + esc(c.h) + "</p>" +
         '<p class="mine">' + (!f.typed ? "Bu boşluğu bilmiyorum diyerek geçtin." :
           mine && mine.id !== c.id ? "Senin cevabın <b>" + esc(mine.en) + "</b>" + (mine.tr ? " (" + esc(mine.tr) + ")" : "") + " ise başka bir şey: " + esc(mine.k) :
