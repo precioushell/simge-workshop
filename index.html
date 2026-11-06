@@ -165,6 +165,7 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
 .prog .num{font-size:.88rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .ask{font-family:var(--label);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:10px}
 .passage{font-family:var(--display);font-size:1.32rem;line-height:1.42;margin:0 0 18px;padding:2px 0 2px 16px;border-left:2px solid var(--c)}
+.passage:empty{display:none}
 .passage.def{font-family:var(--body);font-size:1.05rem;line-height:1.55}
 .opts{display:grid;gap:8px}
 .opt{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;transition:border-color .12s, background .12s}
@@ -474,13 +475,14 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
   </main>
 </div>
 
-<script src="base.js?v=20261106235303"></script>
-<script src="notes-greek.js?v=20261106235303"></script>
-<script src="notes-roman.js?v=20261106235303"></script>
-<script src="notes-medieval.js?v=20261106235303"></script>
-<script src="edu.js?v=20261106235303"></script>
-<script src="lex.js?v=20261106235303"></script>
-<script src="de.js?v=20261106235303"></script>
+<script src="base.js?v=20261107002750"></script>
+<script src="notes-greek.js?v=20261107002750"></script>
+<script src="notes-roman.js?v=20261107002750"></script>
+<script src="notes-medieval.js?v=20261107002750"></script>
+<script src="edu.js?v=20261107002750"></script>
+<script src="lex.js?v=20261107002750"></script>
+<script src="hist.js?v=20261107002750"></script>
+<script src="de.js?v=20261107002750"></script>
 <script>
 (function(){
 const trLower = s => s.toLocaleLowerCase("tr");
@@ -551,19 +553,21 @@ addSubject({
   overlap: OVERLAP_EN
 });
 
-(function(){
-  const concepts = window.LEX.map(e => ({s:e.s, en:e.t, tr:e.tr, date:e.date || "", def:e.d, ex:e.x || "", k:e.k, h:e.h, q:e.q,
+// Subjects with concept cards plus multiple-choice items from the lessons' exercises (card:false: tested, but not cards).
+function addStudySubject(def, items, drillItems, overlap){
+  const concepts = items.map(e => ({s:e.s, en:e.t, tr:e.tr, date:e.date || "", def:e.d, ex:e.x || "", k:e.k, h:e.h, q:e.q,
     cz:e.c, cs:e.cs || e.t, alt:e.a || [], nofill:!e.c, qt:["text","def"], key:trLower(e.t)}));
-  // Multiple-choice items from the lessons' exercises and word lists: tested, but not cards.
-  const drills = window.LEX_DRILLS.map(d => Object.assign({tr:"", date:"", def:(d.stem ? d.stem + " → " : "") + d.ans, ex:"", card:false, key:trLower(d.en)}, d));
+  const drills = drillItems.map(d => Object.assign({tr:"", date:"", def:(d.stem ? d.stem + " → " : "") + d.ans, ex:"", card:false, key:trLower(d.en)}, d));
   const C = concepts.concat(drills);
   C.forEach((c, i) => { c.id = i; });
   const byName = {};
   concepts.forEach(c => { byName[c.en] = c.id; });
-  addSubject({
+  addSubject(Object.assign(def(concepts.length, drills.length), {C: C, overlap: overlap.map(g => g.map(n => byName[n]).filter(x => x !== undefined))}));
+}
+addStudySubject((n, d) => ({
     id:"lx", name:"Lexicology", lang:"en", pool:"soru", balance:true,
-    intro:"Ders sunumlarından " + concepts.length + " kavram ve " + drills.length + " şıklı soru: kelime türleri, ilgili alanlar, İngilizcenin tarihi, ödünçleme, morfoloji ve prefix’ler.",
-    card:concepts.length + " kavram: kelime türleri, tarih, ödünçleme ve kelime yapımı",
+    intro:"Ders sunumlarından " + n + " kavram ve " + d + " şıklı soru: kelime türleri, ilgili alanlar, İngilizcenin tarihi, ödünçleme, morfoloji ve prefix’ler.",
+    card:n + " kavram: kelime türleri, tarih, ödünçleme ve kelime yapımı",
     defLabel:"Notlardaki İngilizce tanım", search:"Ara: lexeme, ödünçleme, Caxton…",
     eraNames:{g:"Giriş ve ilgili alanlar", r:"Tarih ve ödünçleme", m:"Kelime yapımı"},
     secs:{
@@ -588,10 +592,36 @@ addSubject({
       {go:"wrong", lbl:"Tekrar", t:"Yanlışlarım", d:"Yanlış yaptığın sorular burada birikir. Doğru bilince listeden çıkar.", n:"wrong"},
       {go:"gloss", lbl:"Başvuru", t:"Sözlük", d:"Bütün kavramlar tek listede. Kavram adına ya da açıklamasına göre ara.", n:"gloss"}
     ],
-    C: C,
-    overlap: window.LEX_OVERLAP.map(g => g.map(n => byName[n]).filter(x => x !== undefined))
-  });
-})();
+}), window.LEX, window.LEX_DRILLS, window.LEX_OVERLAP);
+addStudySubject((n, d) => ({
+    id:"hc", name:"English History and Culture", lang:"en", pool:"soru", balance:true,
+    intro:"Çalışma kâğıdından " + n + " kavram ve " + d + " şıklı soru: kültür, Roma Britanyası, Anglo-Saksonlar, Vikingler, Eski İngiliz edebiyatı, Beowulf, Normanlar ve Magna Carta.",
+    card:n + " kavram: Roma’dan Magna Carta’ya, Beowulf ve kültür",
+    defLabel:"Notlardaki İngilizce tanım", search:"Ara: Witan, kenning, feodalizm…",
+    eraNames:{g:"Roma ve Anglo-Saksonlar", r:"Edebiyat ve Beowulf", m:"Normanlar ve Orta Çağ"},
+    secs:{
+      c1:{era:"g", short:"Kültür ve Roma", long:"Kültür ve Roma Britanyası"},
+      a1:{era:"g", short:"Anglo-Saksonlar", long:"Anglo-Saksonlar"},
+      v1:{era:"g", short:"Vikingler", long:"Vikingler ve Erik the Vikings"},
+      l1:{era:"r", short:"Eski Edebiyat", long:"Eski İngiliz Edebiyatı"},
+      b1:{era:"r", short:"Beowulf Olayları", long:"Beowulf · Olaylar ve Kişiler"},
+      b2:{era:"r", short:"Beowulf Kültürü", long:"Beowulf · Dil ve Kültür"},
+      n1:{era:"m", short:"Norman ve Feodalizm", long:"Norman Fethi ve Feodalizm"},
+      n2:{era:"m", short:"Krallar", long:"Krallar, Magna Carta ve Parlamento"},
+      n3:{era:"m", short:"Hukuk ve Toplum", long:"Hukuk, Şövalyelik ve Toplum"}
+    },
+    qtypes:[["text","Metin → kavram"],["def","Tanım → kavram"],["line","Satır yorumu"],["case","Olay ve bilgi"]],
+    tiles:[
+      {go:"learn", main:1, lbl:"Öğren", t:"Anlatım", d:"Kavramlar karışık sırayla gelir: kısa açıklama, akılda kalıcı bir ipucu ve örnek.", n:"learn"},
+      {preset:["text","def"], main:1, lbl:"Sına", t:"Kavram Testi", d:"Bir metin ya da tanım okursun, hangi kavram olduğunu işaretlersin."},
+      {go:"fill", main:1, lbl:"Uygula", t:"Boşluk Doldurma", d:"Notlara dayalı İngilizce cümlelerde kavramın yeri boş. Yazarak ya da seçerek tamamla.", n:"fill"},
+      {preset:["line"], main:1, lbl:"Sınav Kalıbı", t:"Satır Yorumu", d:"Beowulf satırı ya da film sahnesi verilir, “There is … here and this is used in …” açıklamasını seçersin."},
+      {preset:["case"], main:1, lbl:"Bilgi", t:"Olay ve Bilgi", d:"Beowulf’un akışı, krallar, tarihler, sayılar ve satırlardaki kültürel ögeler."},
+      {preset:["text","def","line","case"], main:1, lbl:"Sınav", t:"Karışık Test", d:"Bütün soru tipleri karışık, sınav gibi.", n:"quiz"},
+      {go:"wrong", lbl:"Tekrar", t:"Yanlışlarım", d:"Yanlış yaptığın sorular burada birikir. Doğru bilince listeden çıkar.", n:"wrong"},
+      {go:"gloss", lbl:"Başvuru", t:"Sözlük", d:"Bütün kavramlar tek listede. Kavram adına ya da açıklamasına göre ara.", n:"gloss"}
+    ]
+}), window.HIST, window.HIST_DRILLS, window.HIST_OVERLAP);
 (function(){
   const C = window.EDU.map((e, i) => ({id:i, s:e.s, en:e.t, tr:"", date:e.date || "", def:e.d, ex:e.x || "", k:e.k, h:e.h, q:e.q,
     cz:e.c, cs:e.cs || e.t, alt:e.a || [], key:trLower(e.t)}));
@@ -1274,6 +1304,11 @@ function renderHome(){
 
 // ---------- release notes (newest first; add each update at the top) ----------
 const RELEASES = [
+  {id:"2026-11-07-history", date:"7 Kasım 2026", title:"Yeni ders: English History and Culture", items:[
+    "Çalışma kâğıdından kültür, Roma Britanyası, Anglo-Saksonlar, Vikingler, Beowulf, Normanlar ve Magna Carta.",
+    "Anlatım, Test, Boşluk Doldurma, Yanlışlarım ve Sözlük bu derste de var.",
+    "Yeni soru tipi Satır Yorumu: Beowulf satırları ve film sahneleri için doğru sınav açıklamasını seçiyorsun.",
+    "Olay ve Bilgi: Beowulf’un akışı, krallar, tarihler ve sayılar."]},
   {id:"2026-11-06-lexicology", date:"6 Kasım 2026", title:"Yeni ders: Lexicology", items:[
     "Ders sunumlarından 175 kavram: kelime türleri, ilgili alanlar, İngilizcenin tarihi, ödünçleme, morfoloji ve prefix’ler.",
     "Anlatım, Test, Boşluk Doldurma, Yanlışlarım ve Sözlük bu derste de var.",
@@ -1545,7 +1580,7 @@ function distractors(id){
   return out;
 }
 // Almanca: every question carries its own answer options as text (q.right marks these questions).
-const QASK = {art:"Doğru artikeli seç", plural:"Bu kelimenin çoğulu hangisi?", mean:"Bu kelimenin Almancası hangisi?", def:"Bu tanım hangi kelimeye ait?", gap:"Boşluğa ne gelmeli?", order:"Ögeleri doğru sıraya dizilmiş cümleyi seç", origin:"Bu kelime İngilizceye hangi dilden girdi?"};
+const QASK = {art:"Doğru artikeli seç", plural:"Bu kelimenin çoğulu hangisi?", mean:"Bu kelimenin Almancası hangisi?", def:"Bu tanım hangi kelimeye ait?", gap:"Boşluğa ne gelmeli?", order:"Ögeleri doğru sıraya dizilmiş cümleyi seç", origin:"Bu kelime İngilizceye hangi dilden girdi?", line:"Bu satırın en doğru sınav açıklaması hangisi?"};
 const qRight = q => q.right !== undefined ? q.right : q.id;
 function pluralWrong(c){
   const w = c.bare, right = c.pl.slice(4), base = w.replace(/e$/, "");
@@ -1567,7 +1602,7 @@ function makeDeQ(id){
   if (t === "plural") { q.stem = c.en; q.sub = c.tr; q.right = c.pl; wrong = pluralWrong(c); }
   else if (t === "mean") { q.stem = c.tr; q.right = c.en; wrong = wordOptions(id); }
   else if (t === "def") { q.stem = c.def; q.right = c.en; wrong = wordOptions(id); }
-  else if (t === "gap" || t === "origin" || t === "case") { q.stem = c.stem; q.right = c.ans; wrong = c.wrong; }
+  else if (["gap", "origin", "case", "line"].includes(t)) { q.stem = c.stem; q.right = c.ans; wrong = c.wrong; }
   else { q.parts = shuffle(c.parts); q.right = c.ans; wrong = c.wrong; }
   q.opts = shuffle([q.right].concat(wrong));
   return q;

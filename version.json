@@ -1,5 +1,5 @@
 {
- "version": "20261106235303",
+ "version": "20261107002750",
  "files": [
   "index.html",
   "base.js",
@@ -8,6 +8,7 @@
   "notes-medieval.js",
   "edu.js",
   "lex.js",
+  "hist.js",
   "de.js"
  ]
 }
