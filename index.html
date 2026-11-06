@@ -474,12 +474,13 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
   </main>
 </div>
 
-<script src="base.js?v=20261106211543"></script>
-<script src="notes-greek.js?v=20261106211543"></script>
-<script src="notes-roman.js?v=20261106211543"></script>
-<script src="notes-medieval.js?v=20261106211543"></script>
-<script src="edu.js?v=20261106211543"></script>
-<script src="de.js?v=20261106211543"></script>
+<script src="base.js?v=20261106235303"></script>
+<script src="notes-greek.js?v=20261106235303"></script>
+<script src="notes-roman.js?v=20261106235303"></script>
+<script src="notes-medieval.js?v=20261106235303"></script>
+<script src="edu.js?v=20261106235303"></script>
+<script src="lex.js?v=20261106235303"></script>
+<script src="de.js?v=20261106235303"></script>
 <script>
 (function(){
 const trLower = s => s.toLocaleLowerCase("tr");
@@ -530,7 +531,7 @@ const OVERLAP_EN = [[63,67],[13,14],[18,43],[5,35],[3,47,48],[10,36,192],[12,122
   [20,21],[154,153],[181,185],[243,236],[243,206]];
 
 addSubject({
-  id:"en", name:"İngilizce Kavramlar", lang:"en",
+  id:"en", name:"Literary Terms", lang:"en",
   intro:"Yunan, Roma ve Orta Çağ edebiyatından 250 kavram. Önce kısa anlatımla öğren, sonra metinlerle ve boşluk doldurmayla kendini sına.",
   card:"Yunan, Roma ve Orta Çağ edebiyatından 250 kavram",
   defLabel:"Notlardaki İngilizce tanım", search:"Ara: hubris, kibir, Chaucer…",
@@ -550,6 +551,47 @@ addSubject({
   overlap: OVERLAP_EN
 });
 
+(function(){
+  const concepts = window.LEX.map(e => ({s:e.s, en:e.t, tr:e.tr, date:e.date || "", def:e.d, ex:e.x || "", k:e.k, h:e.h, q:e.q,
+    cz:e.c, cs:e.cs || e.t, alt:e.a || [], nofill:!e.c, qt:["text","def"], key:trLower(e.t)}));
+  // Multiple-choice items from the lessons' exercises and word lists: tested, but not cards.
+  const drills = window.LEX_DRILLS.map(d => Object.assign({tr:"", date:"", def:(d.stem ? d.stem + " → " : "") + d.ans, ex:"", card:false, key:trLower(d.en)}, d));
+  const C = concepts.concat(drills);
+  C.forEach((c, i) => { c.id = i; });
+  const byName = {};
+  concepts.forEach(c => { byName[c.en] = c.id; });
+  addSubject({
+    id:"lx", name:"Lexicology", lang:"en", pool:"soru", balance:true,
+    intro:"Ders sunumlarından " + concepts.length + " kavram ve " + drills.length + " şıklı soru: kelime türleri, ilgili alanlar, İngilizcenin tarihi, ödünçleme, morfoloji ve prefix’ler.",
+    card:concepts.length + " kavram: kelime türleri, tarih, ödünçleme ve kelime yapımı",
+    defLabel:"Notlardaki İngilizce tanım", search:"Ara: lexeme, ödünçleme, Caxton…",
+    eraNames:{g:"Giriş ve ilgili alanlar", r:"Tarih ve ödünçleme", m:"Kelime yapımı"},
+    secs:{
+      i1:{era:"g", short:"Kelime ve Dallar", long:"Giriş · Lexicology, Kelime Türleri ve Dallar"},
+      i2:{era:"g", short:"İlgili Alanlar", long:"Giriş · Morphology, Semantics, Etymology, Lexicography"},
+      h1:{era:"r", short:"Kökenler", long:"Tarih · İngilizcenin Kökeni ve İlk Temaslar"},
+      h2:{era:"r", short:"Dört Dönem", long:"Tarih · Old, Middle, Early Modern ve Modern English"},
+      b1:{era:"r", short:"Ödünçleme", long:"Ödünçleme · Nedenler, Uyum ve Yollar"},
+      b2:{era:"r", short:"Kaynak Diller", long:"Ödünçleme · Hangi Dilden Ne Geldi?"},
+      w1:{era:"m", short:"Morfoloji", long:"Word Formation · Morpheme, Root, Affix, Stem"},
+      w2:{era:"m", short:"Yeni Kelime", long:"Word Formation · Yeni Kelime Yolları"},
+      w3:{era:"m", short:"Prefix’ler", long:"Word Formation · Prefix’ler"}
+    },
+    qtypes:[["text","Metin → kavram"],["def","Tanım → kavram"],["origin","Kelime kökeni"],["case","Örnek sorular"]],
+    tiles:[
+      {go:"learn", main:1, lbl:"Öğren", t:"Anlatım", d:"Kavramlar karışık sırayla gelir: kısa açıklama, akılda kalıcı bir ipucu ve örnek.", n:"learn"},
+      {preset:["text","def"], main:1, lbl:"Sına", t:"Kavram Testi", d:"Bir metin ya da tanım okursun, hangi kavram olduğunu işaretlersin."},
+      {go:"fill", main:1, lbl:"Uygula", t:"Boşluk Doldurma", d:"Notlara dayalı İngilizce cümlelerde kavramın yeri boş. Yazarak ya da seçerek tamamla.", n:"fill"},
+      {preset:["origin"], main:1, lbl:"Köken", t:"Kelime Kökeni", d:"Kelime verilir, İngilizceye hangi dilden geldiğini seçersin."},
+      {preset:["case"], main:1, lbl:"Alıştırma", t:"Örnek Sorular", d:"Dersteki alıştırmalar: kelime türü, dönem, biçimbirim, ek türü, prefix, tarih ve sayılar."},
+      {preset:["text","def","origin","case"], main:1, lbl:"Sınav", t:"Karışık Test", d:"Bütün soru tipleri karışık, sınav gibi.", n:"quiz"},
+      {go:"wrong", lbl:"Tekrar", t:"Yanlışlarım", d:"Yanlış yaptığın sorular burada birikir. Doğru bilince listeden çıkar.", n:"wrong"},
+      {go:"gloss", lbl:"Başvuru", t:"Sözlük", d:"Bütün kavramlar tek listede. Kavram adına ya da açıklamasına göre ara.", n:"gloss"}
+    ],
+    C: C,
+    overlap: window.LEX_OVERLAP.map(g => g.map(n => byName[n]).filter(x => x !== undefined))
+  });
+})();
 (function(){
   const C = window.EDU.map((e, i) => ({id:i, s:e.s, en:e.t, tr:"", date:e.date || "", def:e.d, ex:e.x || "", k:e.k, h:e.h, q:e.q,
     cz:e.c, cs:e.cs || e.t, alt:e.a || [], key:trLower(e.t)}));
@@ -578,7 +620,7 @@ addSubject({
   const byName = {};
   C.forEach(c => { byName[c.en] = c.id; });
   addSubject({
-    id:"de", name:"Almanca", lang:"de", unit:"madde",
+    id:"de", name:"Almanca", lang:"de", unit:"madde", pool:"madde",
     intro:"Hocanın soru tiplerine göre: artikel, çoğul, kelime bulma, dilbilgisi boşlukları ve cümle dizilimi. Bütün sorular şıklı.",
     card:"Artikel, kelime, dilbilgisi ve cümle dizilimi soruları",
     defLabel:"Almanca tanım", search:"Ara: Ampel, köprü, Dativ…",
@@ -665,7 +707,7 @@ function packRoot(root, withSync){
 }
 function normalizeRoot(data){
   data = JSON.parse(JSON.stringify(data || {}));
-  // Before subjects existed, progress was saved flat: it all belongs to İngilizce Kavramlar.
+  // Before subjects existed, progress was saved flat: it all belongs to Literary Terms.
   if (!data.subj) data = {updatedAt: data.updatedAt || 0, subj: {en: data}};
   const root = {updatedAt: data.updatedAt || 0, subj: {}};
   if (data.sync) root.sync = data.sync;
@@ -1126,6 +1168,7 @@ function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--) { con
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const inSecs = () => C.filter(c => S.secs.includes(c.s)).map(c => c.id);
 const cardIds = () => inSecs().filter(id => C[id].card !== false);
+const fillable = id => C[id].card !== false && !C[id].nofill;
 const fmtDate = t => new Date(t).toLocaleString("tr-TR", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"});
 
 // ---------- views ----------
@@ -1231,6 +1274,11 @@ function renderHome(){
 
 // ---------- release notes (newest first; add each update at the top) ----------
 const RELEASES = [
+  {id:"2026-11-06-lexicology", date:"6 Kasım 2026", title:"Yeni ders: Lexicology", items:[
+    "Ders sunumlarından 175 kavram: kelime türleri, ilgili alanlar, İngilizcenin tarihi, ödünçleme, morfoloji ve prefix’ler.",
+    "Anlatım, Test, Boşluk Doldurma, Yanlışlarım ve Sözlük bu derste de var.",
+    "Ayrıca şıklı sorular: kelime kökeni, dersteki alıştırmalar, tarih ve sayılar, prefix soruları.",
+    "İngilizce Kavramlar dersinin adı artık Literary Terms; ilerlemen aynen duruyor."]},
   {id:"2026-11-06-address", date:"6 Kasım 2026", title:"Yeni site adresi", items:[
     "Site artık sypka666.github.io/simge-workshop adresinde.",
     "Otomatik güncelleme bu adresten çalışıyor; eski .exe yerine yenisini kullan.",
@@ -1369,7 +1417,7 @@ function renderSubject(){
     save(); show("quiz");
   });
   const eras = {};
-  C.forEach(c => { const e = SECS[c.s].era; eras[e] = (eras[e] || 0) + 1; });
+  C.forEach(c => { if (c.card === false && !SUB.unit) return; const e = SECS[c.s].era; eras[e] = (eras[e] || 0) + 1; });
   $("#s-eras").innerHTML = Object.keys(eras).map(e => '<span style="--c:var(--era-' + e + ')">' + esc(SUB.eraNames[e]) + " · " + eras[e] + " " + (SUB.unit || "kavram") + "</span>").join("");
   banners($("#s-banners"), [SUB.id]);
 }
@@ -1456,7 +1504,7 @@ function quizPool(){
 function renderSetup(){
   const pool = quizPool().length;
   banners($("#q-banners"), [SUB.id]);
-  $("#q-pool").textContent = pool ? pool + (SUB.lang === "de" ? " madde arasından sorulacak" : " kavram arasından sorulacak") : "Seçili bölümlerde bu soru tipi yok. Başka bir bölüm ya da soru tipi seç.";
+  $("#q-pool").textContent = pool ? pool + " " + (SUB.pool || "kavram") + " arasından sorulacak" : "Seçili bölümlerde bu soru tipi yok. Başka bir bölüm ya da soru tipi seç.";
   $("#q-start").disabled = !pool;
   $("#q-n").innerHTML = NS.map(n => '<button data-n="' + n + '" aria-pressed="' + (S.n === n) + '">' + n + "</button>").join("") +
     '<button data-n="0" aria-pressed="' + (S.n === 0) + '">Hepsi (' + pool + ")</button>";
@@ -1481,7 +1529,7 @@ const defUsable = c => !!c.def && !mentions(c, c.def);
 const textUsable = c => !!c.q && !mentions(c, c.q);
 function distractors(id){
   const c = C[id], used = new Set([c.key]), out = [];
-  const ok = d => d.id !== id && !used.has(d.key) && !NOPE[id].has(d.id);
+  const ok = d => d.id !== id && d.card !== false && !used.has(d.key) && !NOPE[id].has(d.id);
   const tiers = [
     C.filter(d => d.s === c.s),
     C.filter(d => d.s !== c.s && SECS[d.s].era === SECS[c.s].era),
@@ -1497,7 +1545,7 @@ function distractors(id){
   return out;
 }
 // Almanca: every question carries its own answer options as text (q.right marks these questions).
-const QASK = {art:"Doğru artikeli seç", plural:"Bu kelimenin çoğulu hangisi?", mean:"Bu kelimenin Almancası hangisi?", def:"Bu tanım hangi kelimeye ait?", gap:"Boşluğa ne gelmeli?", order:"Ögeleri doğru sıraya dizilmiş cümleyi seç"};
+const QASK = {art:"Doğru artikeli seç", plural:"Bu kelimenin çoğulu hangisi?", mean:"Bu kelimenin Almancası hangisi?", def:"Bu tanım hangi kelimeye ait?", gap:"Boşluğa ne gelmeli?", order:"Ögeleri doğru sıraya dizilmiş cümleyi seç", origin:"Bu kelime İngilizceye hangi dilden girdi?"};
 const qRight = q => q.right !== undefined ? q.right : q.id;
 function pluralWrong(c){
   const w = c.bare, right = c.pl.slice(4), base = w.replace(/e$/, "");
@@ -1519,13 +1567,13 @@ function makeDeQ(id){
   if (t === "plural") { q.stem = c.en; q.sub = c.tr; q.right = c.pl; wrong = pluralWrong(c); }
   else if (t === "mean") { q.stem = c.tr; q.right = c.en; wrong = wordOptions(id); }
   else if (t === "def") { q.stem = c.def; q.right = c.en; wrong = wordOptions(id); }
-  else if (t === "gap") { q.stem = c.stem; q.right = c.ans; wrong = c.wrong; }
+  else if (t === "gap" || t === "origin" || t === "case") { q.stem = c.stem; q.right = c.ans; wrong = c.wrong; }
   else { q.parts = shuffle(c.parts); q.right = c.ans; wrong = c.wrong; }
   q.opts = shuffle([q.right].concat(wrong));
   return q;
 }
 function makeQ(id){
-  if (SUB.lang === "de") return makeDeQ(id);
+  if (SUB.lang === "de" || C[id].card === false) return makeDeQ(id);
   const c = C[id], types = [];
   if (S.types.text && textUsable(c)) types.push("text");
   if (S.types.def && defUsable(c)) types.push("def");
@@ -1535,8 +1583,16 @@ function makeQ(id){
 }
 const qText = q => q.t === "text" ? C[q.id].q : C[q.id].def;
 
+// Lexicology's word lists are long, so a mixed test takes evenly from concepts, word origins and exercises.
+function balanced(ids, n){
+  const groups = {};
+  shuffle(ids).forEach(id => { const g = C[id].card === false ? C[id].qt[0] : "concept"; (groups[g] = groups[g] || []).push(id); });
+  const lists = Object.values(groups), out = [];
+  while (out.length < n && lists.some(l => l.length)) lists.forEach(l => { if (l.length && out.length < n) out.push(l.pop()); });
+  return shuffle(out);
+}
 function runQuiz(ids, n, label){
-  const chosen = shuffle(ids).slice(0, n || ids.length);
+  const chosen = SUB.balance && n ? balanced(ids, n) : shuffle(ids).slice(0, n || ids.length);
   S.quiz = {items: chosen.map(makeQ), i: 0, right: 0, label: label || "test", started: Date.now()};
   save();
   show("run"); drawQ();
@@ -1550,7 +1606,7 @@ function drawQ(){
   card.style.setProperty("--c", eraColor(c.s));
   card.innerHTML =
     '<div class="meta"><span class="era">' + SECS[c.s].short + "</span>" + (textOpts && c.date ? '<span class="date">' + esc(c.date) + "</span>" : "") + "</div>" +
-    '<div class="ask">' + (textOpts ? QASK[q.t] : q.t === "text" ? "Bu metin hangi kavramı anlatıyor?" : "Bu tanım hangi kavrama ait?") + "</div>" +
+    '<div class="ask">' + (textOpts ? esc(c.ask || QASK[q.t]) : q.t === "text" ? "Bu metin hangi kavramı anlatıyor?" : "Bu tanım hangi kavrama ait?") + "</div>" +
     (textOpts ? deStem(q) : '<p class="passage' + (q.t === "def" ? " def" : "") + '">' + esc(qText(q)) + "</p>") +
     '<div class="opts">' + q.opts.map((o, i) =>
       '<button class="opt" data-i="' + i + '"><span class="L">' + "ABCD"[i] + '</span><span class="o"><b>' + esc(textOpts ? o : C[o].en) + '</b><small hidden>' + esc(textOpts ? "" : C[o].tr) + "</small></span></button>"
@@ -1669,7 +1725,7 @@ function blankIn(c, txt){
   return null;
 }
 SUBJECTS.en.C.forEach(c => { c.hasEx = !!(c.ex && blankIn(c, c.ex)); });
-// Eğitime Giriş has hand-written sentences (cz) with ___ where the concept goes; İngilizce Kavramlar blanks the notes' own sentences.
+// Eğitime Giriş has hand-written sentences (cz) with ___ where the concept goes; Literary Terms blanks the notes' own sentences.
 function cloze(c, src){
   if (c.cz) return {src: "cz", text: c.cz.replace("___", GAP), surf: c.cs};
   if (src === "ex") { const b = blankIn(c, c.ex); if (b) return Object.assign(b, {src: "ex"}); }
@@ -1691,7 +1747,7 @@ function lev(a, b){
 // Connecting words never matter, and word order is free ("will and fate" for "fate and will").
 const LINK_WORDS = new Set(["and","or","vs","the","of","a","an","in","ve","ile"]);
 // Generic words a person may leave out ("lyric" for "lyric poetry").
-const OPTIONAL_WORDS = new Set(["free","poetry","poem","verse","play","period","literature","narrative","philosophy","culture"]);
+const OPTIONAL_WORDS = new Set(["free","poetry","poem","verse","play","period","literature","narrative","philosophy","culture","word","prefix","prefixe"]);
 function wordBag(s, loose){
   return akey(s).split(" ").map(w => w.length > 3 ? w.replace(/s$/, "") : w)
     .filter(w => !LINK_WORDS.has(w) && !(loose && OPTIONAL_WORDS.has(w))).sort().join(" ");
@@ -1706,15 +1762,15 @@ function judge(c, surf, val){
   const near = (a, b) => lev(a, b) <= (b.length >= 9 ? 2 : b.length >= 5 ? 1 : 0);
   // Another concept's own name is never a typo or a shorter form of this one ("Oral dönem" for "Anal dönem").
   const bag = wordBag(val), loose = wordBag(val, true);
-  if (C.some(d => d.en !== c.en && alts(d).some(a => wordBag(a) === bag))) return false;
+  if (C.some(d => d.card !== false && d.en !== c.en && alts(d).some(a => wordBag(a) === bag))) return false;
   if (targets.some(t => near(v, t))) return "close";
   if (targets.some(t => near(bag, wordBag(t)))) return "close";
   return loose && targets.some(t => near(loose, wordBag(t, true))) ? "close" : false;
 }
-const conceptNamed = val => C.find(d => alts(d).some(a => akey(a) === akey(val)));
+const conceptNamed = val => C.find(d => d.card !== false && alts(d).some(a => akey(a) === akey(val)));
 
 function renderFillSetup(){
-  const pool = inSecs().length;
+  const pool = inSecs().filter(fillable).length;
   banners($("#f-banners"), [SUB.id]);
   $("#f-pool").textContent = pool + " kavram arasından sorulacak";
   $("#f-n").innerHTML = NS.map(n => '<button data-n="' + n + '" aria-pressed="' + (S.fn === n) + '">' + n + "</button>").join("") +
@@ -1725,7 +1781,7 @@ function renderFillSetup(){
     b.onclick = () => { S.fmode = b.dataset.m; save(); renderFillSetup(); };
   });
 }
-$("#f-start").onclick = () => runFill(inSecs(), S.fn);
+$("#f-start").onclick = () => runFill(inSecs().filter(fillable), S.fn);
 function runFill(ids, n, label){
   const chosen = shuffle(ids).slice(0, n || ids.length);
   S.fill = {
@@ -1824,13 +1880,13 @@ function renderWrong(){
     return;
   }
   box.innerHTML = '<h2 class="vt">Yanlışlarım</h2><p class="vd">' + ids.length + " kavram tekrar bekliyor. Doğru bildiğin anda listeden çıkar.</p>" +
-    '<div class="actions"><button class="btn pri" id="w-quiz">Bunlardan test yap</button>' + (SUB.nav.some(n => n[0] === "fill") ? '<button class="btn" id="w-fill">Boşluk doldurmayla çalış</button>' : "") + '<button class="btn" id="w-learn">Kartlarla çalış</button></div>' +
+    '<div class="actions"><button class="btn pri" id="w-quiz">Bunlardan test yap</button>' + (SUB.nav.some(n => n[0] === "fill") && ids.some(fillable) ? '<button class="btn" id="w-fill">Boşluk doldurmayla çalış</button>' : "") + '<button class="btn" id="w-learn">Kartlarla çalış</button></div>' +
     '<div class="list">' + ids.map(id => {
       const c = C[id];
       return '<div class="item" style="--c:' + eraColor(c.s) + '"><b>' + esc(c.en) + '</b> <span class="tr">' + esc(c.tr) + "</span><p>" + esc(c.k) + '</p><p style="color:var(--gilt)">' + esc(c.h) + "</p><p>" + S.wrong[id] + " kez karıştırıldı</p></div>";
     }).join("") + "</div>";
   $("#w-quiz").onclick = () => runQuiz(ids, 0, "wrong");
-  if ($("#w-fill")) $("#w-fill").onclick = () => runFill(ids, 0, "fillwrong");
+  if ($("#w-fill")) $("#w-fill").onclick = () => runFill(ids.filter(fillable), 0, "fillwrong");
   $("#w-learn").onclick = () => { S.learn = {deck: shuffle(ids), at: 0, src: "wrong"}; save(); show("learn", {keep:true}); $("#l-guess").checked = !!S.guess; drawCard(); };
 }
 
