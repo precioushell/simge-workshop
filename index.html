@@ -474,12 +474,12 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
   </main>
 </div>
 
-<script src="base.js?v=20261106192741"></script>
-<script src="notes-greek.js?v=20261106192741"></script>
-<script src="notes-roman.js?v=20261106192741"></script>
-<script src="notes-medieval.js?v=20261106192741"></script>
-<script src="edu.js?v=20261106192741"></script>
-<script src="de.js?v=20261106192741"></script>
+<script src="base.js?v=20261106211543"></script>
+<script src="notes-greek.js?v=20261106211543"></script>
+<script src="notes-roman.js?v=20261106211543"></script>
+<script src="notes-medieval.js?v=20261106211543"></script>
+<script src="edu.js?v=20261106211543"></script>
+<script src="de.js?v=20261106211543"></script>
 <script>
 (function(){
 const trLower = s => s.toLocaleLowerCase("tr");
@@ -1231,6 +1231,10 @@ function renderHome(){
 
 // ---------- release notes (newest first; add each update at the top) ----------
 const RELEASES = [
+  {id:"2026-11-06-address", date:"6 Kasım 2026", title:"Yeni site adresi", items:[
+    "Site artık sypka666.github.io/simge-workshop adresinde.",
+    "Otomatik güncelleme bu adresten çalışıyor; eski .exe yerine yenisini kullan.",
+    "Hesabın ve istatistiklerin aynen duruyor."]},
   {id:"2026-11-06-fill", date:"6 Kasım 2026", title:"Boşluk doldurmada daha adil kontrol", items:[
     "Kelime sırası önemli değil: “will and fate” de doğru sayılıyor.",
     "Genel kelimeyi yazmasan da olur: “lyric poetry” yerine “lyric” doğru sayılıyor.",
@@ -1307,7 +1311,7 @@ function renderNotes(){
 
 // ---------- new-version notice ----------
 // Compares this copy's version.json with the one on the update site; shown on every page when a newer one is online.
-const UPDATE_SITE = "https://precioushell.github.io/simge-workshop/";
+const UPDATE_SITE = "https://sypka666.github.io/simge-workshop/";
 let localVersion = null, updateInfo = null;
 const versionText = v => v && v.length >= 12 ? [v.slice(6, 8), v.slice(4, 6), v.slice(0, 4)].join(".") + " " + v.slice(8, 10) + ":" + v.slice(10, 12) : "";
 async function checkVersion(){
