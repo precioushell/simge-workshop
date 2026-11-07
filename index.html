@@ -475,14 +475,14 @@ details.def p{margin:8px 0 0;font-size:.95rem;max-width:65ch}
   </main>
 </div>
 
-<script src="base.js?v=20261107002750"></script>
-<script src="notes-greek.js?v=20261107002750"></script>
-<script src="notes-roman.js?v=20261107002750"></script>
-<script src="notes-medieval.js?v=20261107002750"></script>
-<script src="edu.js?v=20261107002750"></script>
-<script src="lex.js?v=20261107002750"></script>
-<script src="hist.js?v=20261107002750"></script>
-<script src="de.js?v=20261107002750"></script>
+<script src="base.js?v=20261107083322"></script>
+<script src="notes-greek.js?v=20261107083322"></script>
+<script src="notes-roman.js?v=20261107083322"></script>
+<script src="notes-medieval.js?v=20261107083322"></script>
+<script src="edu.js?v=20261107083322"></script>
+<script src="lex.js?v=20261107083322"></script>
+<script src="hist.js?v=20261107083322"></script>
+<script src="de.js?v=20261107083322"></script>
 <script>
 (function(){
 const trLower = s => s.toLocaleLowerCase("tr");
@@ -746,6 +746,8 @@ function normalizeRoot(data){
     const s = Object.assign(freshSub(id), data.subj[id] || {});
     delete s.updatedAt;
     unpackSub(id, s);
+    s.history = Array.isArray(s.history) ? s.history.filter(h => h && typeof h === "object") : [];
+    ["answered", "correct", "tests", "fa", "fc"].forEach(k => { if (!Number.isFinite(s[k])) s[k] = 0; });
     if (!Array.isArray(s.secs) || !s.secs.length || s.secs.some(x => !SUBJECTS[id].secs[x])) s.secs = SUBJECTS[id].ids.slice();
     if (!s.types || !SUBJECTS[id].qtypes.some(t => s.types[t[0]])) s.types = allTypes(id);
     root.subj[id] = s;
@@ -817,7 +819,10 @@ function setSync(s){
   syncState = s; const el = $("#sync"); el.dataset.s = s; el.textContent = SYNC_TEXT[s];
   const btn = $("#acc-btn");
   if (btn) { btn.hidden = !ACCOUNTS_ON; btn.textContent = acct ? acct.name : "Giriş yap"; }
-  if (current === "settings") renderSettings();
+  const st = $("#s-state");
+  if (st) st.textContent = SYNC_TEXT[s];
+  const last = $("#s-last");
+  if (last && R.updatedAt) last.textContent = " · son kayıt " + fmtDate(R.updatedAt);
   if (current === "account" && acct) renderAccount();
 }
 async function initCloud(){
@@ -1157,6 +1162,9 @@ let LOOK = freshLook();
 try {
   const saved = JSON.parse(localStorage.getItem(LOOK_KEY) || "null");
   if (saved) LOOK = Object.assign(freshLook(), saved);
+  if (!FONT_SPEC[LOOK.fontD]) LOOK.fontD = freshLook().fontD;
+  if (!FONT_SPEC[LOOK.fontB]) LOOK.fontB = freshLook().fontB;
+  if (!SIZES.some(s => s[0] === LOOK.size)) LOOK.size = freshLook().size;
   else if (S.theme === "light" || S.theme === "dark") LOOK.theme = S.theme === "light" ? "sabah" : "gece";
 } catch(e) {}
 function saveLook(){ try { localStorage.setItem(LOOK_KEY, JSON.stringify(LOOK)); } catch(e) {} }
@@ -1304,6 +1312,10 @@ function renderHome(){
 
 // ---------- release notes (newest first; add each update at the top) ----------
 const RELEASES = [
+  {id:"2026-11-07-settings", date:"7 Kasım 2026", title:"Ayarlar ekranı daha sağlam", items:[
+    "Kayıtta bozuk bir bilgi olsa bile Ayarlar artık boş kalmıyor; sorunlu kısım atlanıyor.",
+    "Kaydederken ekran baştan çizilmiyor, düğmelere basmak daha rahat.",
+    "İstatistiklerin ve ayarların etkilenmedi."]},
   {id:"2026-11-07-history", date:"7 Kasım 2026", title:"Yeni ders: English History and Culture", items:[
     "Çalışma kâğıdından kültür, Roma Britanyası, Anglo-Saksonlar, Vikingler, Beowulf, Normanlar ve Magna Carta.",
     "Anlatım, Test, Boşluk Doldurma, Yanlışlarım ve Sözlük bu derste de var.",
@@ -1947,7 +1959,7 @@ function statsPanel(id){
   const pct = P.answered ? "%" + Math.round(100 * P.correct / P.answered) : "–";
   const bySec = sub.ids.map(s => {
     let a = 0, r = 0;
-    sub.C.forEach(c => { if (c.s === s && P.cs[c.id]) { a += P.cs[c.id][0]; r += P.cs[c.id][1]; } });
+    sub.C.forEach(c => { const x = P.cs[c.id]; if (c.s === s && Array.isArray(x)) { a += x[0] || 0; r += x[1] || 0; } });
     return {s, p: a ? Math.round(100 * r / a) : null};
   });
   const tN = P.answered - P.fa;
@@ -1968,6 +1980,10 @@ function statsPanel(id){
       " · Boşluk doldurma: " + P.fa + " cevap, doğruluk " + (P.fa ? "%" + Math.round(100 * P.fc / P.fa) : "–") + ".</p>") +
     "<p>Yanlışlarım listesinde şu an " + wrongN + " kavram var.</p>" +
   "</div>";
+}
+function safeStats(id){
+  try { return statsPanel(id); }
+  catch(e) { return '<div class="panel"><h3>İstatistikler · ' + esc(SUBJECTS[id].name) + "</h3><p>Bu dersin istatistikleri gösterilemedi: " + esc(e.message) + "</p></div>"; }
 }
 function renderSettings(){
   const where = acct
@@ -2014,7 +2030,7 @@ function renderSettings(){
     '<h2 class="vt">Ayarlar</h2><p class="vd">Görünüm, istatistikler, tercihler ve sıfırlama seçenekleri.</p><div class="sets">' +
     lookPanel +
 
-    SUBJECT_IDS.map(statsPanel).join("") +
+    SUBJECT_IDS.map(safeStats).join("") +
 
     '<div class="panel"><h3>Tercihler</h3>' +
       '<div class="opt-row"><div class="lab"><b>Anlatımda önce tahmin et</b><small>Kartta açıklama, sen “Göster” deyince açılır</small></div><label class="toggle"><input type="checkbox" id="s-guess"' + (S.guess ? " checked" : "") + "> Açık</label></div>" +
@@ -2023,7 +2039,7 @@ function renderSettings(){
     "</div>" +
 
     '<div class="panel"><h3>Kayıt</h3><p>' + where + "</p>" +
-      '<p>Durum: <b style="color:var(--ink)">' + SYNC_TEXT[syncState] + "</b>" + (R.updatedAt ? " · son kayıt " + fmtDate(R.updatedAt) : "") + "</p>" +
+      '<p>Durum: <b id="s-state" style="color:var(--ink)">' + SYNC_TEXT[syncState] + '</b><span id="s-last">' + (R.updatedAt ? " · son kayıt " + fmtDate(R.updatedAt) : "") + "</span></p>" +
       (localVersion ? '<p>Uygulama sürümü: <b style="color:var(--ink)">' + versionText(localVersion) + "</b></p>" : "") +
       (updateInfo && updateInfo.ok === true ? "<p>Son güncelleme denemesi başarılı.</p>" : "") +
       (updateInfo && updateInfo.ok === false ? '<p style="color:var(--bad)">Güncelleme indirilemedi: ' + esc(updateInfo.error) + "</p>" : "") +
